@@ -1,0 +1,178 @@
+/*
+ * A PONTE LIVE — BRAND PARITY V3
+ * Source: user's 2026-10-17 website ZIP, not generic wine-brand styling.
+ * Fonts are loaded exactly as on the site, via next/font/local (src/lib/fonts.ts).
+ * Source of visual rules: Hero, Wines, BrandFilm, Navbar and globals CSS.
+ */
+:root {
+  /* Real A PONTE site: section-specific surface and heading values matter. */
+  --ap-section: #fff6e8; /* hero, wine, events, film, FAQ */
+  --ap-background: #f5eee2; /* global stylesheet */
+  --ap-surface: #ede6dc;
+  --ap-text: #2e2e2e;
+  --ap-muted: #77736e;
+  --ap-hero-muted: #555;
+  --ap-red: #bc2e27; /* hero and CTA actual value */
+  --ap-red-dark: #561512; /* end of actual heading gradient */
+  --ap-red-hover: #a32620;
+  --ap-gold: #d4a358; /* only site dark-section highlights */
+  --ap-border: rgba(46,46,46,.15);
+
+  --ink: var(--ap-text);
+  --background: var(--ap-section);
+  --panel: var(--ap-surface);
+  --panel-2: var(--ap-background);
+  --cream: var(--ap-section);
+  --muted: var(--ap-muted);
+  --subtle: #817b74;
+  --gold: var(--ap-red);
+  --gold-pale: var(--ap-red);
+  --border: var(--ap-border);
+}
+html, body, .demo-stage { background: #050505; }
+body { font-family: var(--sans); font-weight: 300; color: var(--ap-text); }
+.phone, .phone-safe, .phone-bottom-safe, .screen-scroll { background: var(--ap-section); }
+.phone { border-radius: 16px; box-shadow: 0 0 0 1px #2d2723, 0 20px 75px rgba(0,0,0,.6); }
+.screen-scroll { scrollbar-color: #b6aca2 transparent; }
+.screen-scroll::-webkit-scrollbar-thumb { background: #b6aca2; }
+button, input, select, textarea { font-family: var(--sans); }
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--ap-red); outline-offset: 3px; }
+
+/* Site typography: New Title for all expressive uppercase display,
+   and Barlow Light for readable supporting text. Not Playfair / DM Sans. */
+h1, h2, h3, .gallery-outro p,
+.moment-meta strong {
+  font-family: var(--serif);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  font-style: normal;
+}
+/* Long-form copy: Barlow Light at a unitless 1.6. Headings, buttons, nav and
+   short labels keep their own individually set line heights. */
+p { font-family: var(--sans); font-weight: 300; line-height: 1.6; }
+.eyebrow { font-family: var(--sans); font-weight: 400; letter-spacing: .07em; }
+.eyebrow, .gold-text { color: var(--ap-red); }
+/* Same 95-degree burgundy gradient as Hero.module.css / WinesSection.module.css */
+.featured-section h2, .interior-head h1,
+.dialog-body h2 {
+  background: linear-gradient(95deg, var(--ap-red), var(--ap-red-dark));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  padding-top: .08em;
+  padding-bottom: .035em;
+  line-height: 1.01;
+}
+
+/* Branded compact header, using actual bridge from public/images/logo.png. */
+.site-header { height: 69px; background: rgba(255,246,232,.98); border-bottom: 1px solid rgba(46,46,46,.08); padding: 0 13px; }
+.brand-lockup { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.bridge-mark { width: 52px; height: 23px; object-fit: contain; display: block; flex-shrink: 0; }
+.wordmark-divider { height: 17px; width: 1px; margin: 0 2px 0 1px; background: rgba(188,46,39,.27); transform: none; }
+.wordmark-live { font-family: var(--sans); font-size: 11px; font-weight: 400; letter-spacing: .09em; color: var(--ap-red); }
+.header-actions { gap: 4px; }
+/* Language switcher: values from the site's Navbar.module.css (.langSwitcher,
+   .langToggle, .flag, .chevron, .langDropdown, .langOption). Only the toggle's
+   min-height/padding are added, for a mobile touch target. */
+.lang-switcher { position: relative; }
+.lang-toggle { background: none; border: none; cursor: pointer; padding: 0 4px; min-height: 44px; display: flex; align-items: center; gap: 6px; font-family: var(--sans); font-weight: 300; font-size: 14px; color: #1a1a1a; letter-spacing: .03em; transition: color .35s cubic-bezier(.16,1,.3,1); }
+.lang-switcher .lang-flag { width: 20px; height: 15px; border-radius: 2px; box-shadow: none; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: transparent; font-size: 12px; line-height: 1; }
+.lang-chevron { font-size: 9px; opacity: .55; transition: transform .25s cubic-bezier(.16,1,.3,1); line-height: 1; }
+.lang-chevron.open { transform: rotate(180deg); }
+.lang-dropdown { position: absolute; top: calc(100% + 10px); right: 0; z-index: 20; background: #fff; border-radius: 6px; box-shadow: 0 8px 32px rgba(0,0,0,.14); padding: 6px; display: flex; flex-direction: column; gap: 2px; min-width: 110px; opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .22s cubic-bezier(.16,1,.3,1), transform .22s cubic-bezier(.16,1,.3,1); }
+.lang-dropdown.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.lang-option { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; background: none; cursor: pointer; border-radius: 4px; font-family: var(--sans); font-weight: 300; font-size: 13px; color: #1a1a1a; letter-spacing: .02em; white-space: nowrap; transition: background .15s ease; width: 100%; text-align: left; }
+.lang-option:hover { background: #f5f0e8; }
+.lang-option.active { color: #bc2e27; }
+
+/* Buttons: the site's one shared CTA (Hero.module.css .btn/.btnPrimary/
+   .btnSecondary, copied verbatim into every section). Only min-height is
+   added, for a comfortable mobile touch target. */
+.btn, .website-pill {
+  border: none;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: .02em;
+  text-transform: none;
+  box-shadow: 0 4px 40px rgba(0,0,0,.18);
+  transition:
+    transform .18s cubic-bezier(.16,1,.3,1),
+    box-shadow .18s cubic-bezier(.16,1,.3,1),
+    background-color .2s ease;
+}
+.btn { padding: 11px 22px; min-height: 46px; }
+.btn:hover, .website-pill:hover { transform: translateY(-3px); box-shadow: 0 4px 40px rgba(0,0,0,.24); }
+.btn:active, .website-pill:active { transform: translateY(0); box-shadow: 0 4px 40px rgba(0,0,0,.18); transition-duration: .08s; }
+.btn-gold { background-color: var(--ap-red); color: #fff; }
+.btn-gold:hover { background-color: var(--ap-red-hover); color: #fff; }
+.btn-outline { background-color: #fff; color: #1a1a1a; }
+/* The site's .btnSecondary (white), for CTAs that must stay white on dark screens. */
+.btn-white { background-color: #fff; color: #1a1a1a; }
+
+/* Header "Visit website": btnPrimary on the cream header. Sentence case, as on every site button. */
+.website-pill { min-height: 44px; padding: 0 22px; gap: 8px; line-height: 1.5; background-color: var(--ap-red); color: #fff; }
+.website-pill:hover { background-color: var(--ap-red-hover); }
+.text-link { color: var(--ap-red); border-bottom-color: var(--ap-red); font-family: var(--sans); font-weight: 400; font-size: 12px; letter-spacing: .035em; text-transform: none; }
+.text-link:hover { color: var(--ap-red-hover); }
+
+/* /live: official wine images on cream sections, not gold-and-bordeaux app. */
+.hero-carousel { background: #22201c; height: 430px; }
+.hero-photo img { filter: saturate(.92) brightness(.93); }
+.hero-dark { background: linear-gradient(180deg,rgba(15,15,15,.42) 0%,rgba(15,15,15,.05) 30%,rgba(17,13,13,.38) 55%,rgba(13,10,10,.92) 100%); }
+.hero-content { bottom: 82px; }
+.hero-content h1 { font-family: var(--serif); text-transform: uppercase; font-size: 64px; line-height: 1; letter-spacing: .02em; color: #fff6e8; max-width: 345px; }
+.hero-content p { color: #fff6e8; font-size: 13px; font-weight: 300; margin-top: 11px; }
+.slide-arrows button { border-color: rgba(255,255,255,.60); }
+.featured-section { margin-top: 34px; }
+.featured-section h2 { font-size: 33px; line-height: 1; }
+.featured-section > p { color: #555; font-size: 13px; }
+.featured-tile { background: var(--ap-surface); }
+.featured-tile figcaption span { font-size: 11px; font-weight: 400; }
+.featured-tile figcaption small { font-size: 8px; font-weight: 400; }
+
+/* Persistent mobile nav: the cream page is part of the A PONTE website. */
+.bottom-nav { background: rgba(255,246,232,.99); border-top: 1px solid var(--ap-border); }
+/* Navbar link treatment from the site: Barlow 300, #1a1a1a, red on hover/active. */
+.nav-link { color: #1a1a1a; font-family: var(--sans); font-size: 12px; font-weight: 300; letter-spacing: .03em; transition: color .35s cubic-bezier(.16,1,.3,1); }
+.nav-link.active, .nav-link:hover { color: var(--ap-red); }
+.nav-link.active::before { background: var(--ap-red); height: 3px; }
+
+/* Gallery: keep moments photographic, but restrained light editorial UI. */
+.interior-head { padding: 32px 26px 24px; }
+.interior-head h1 { font-size: 44px; letter-spacing: .02em; line-height: 1.03; margin: 8px 0 10px; }
+.interior-head p { font-size: 14px; color: #555; }
+.filter-section { padding-top: 0; }
+.filter-chip { background: transparent; border: 1px solid rgba(46,46,46,.25); border-radius: 4px; color: #555; font-family: var(--sans); font-size: 12px; font-weight: 400; }
+.filter-chip.chosen { background: var(--ap-red); border-color: var(--ap-red); color: white; font-weight: 400; }
+.filter-chip:hover:not(.chosen) { background: #f0e1d4; }
+.moment-tile { background: var(--ap-surface); }
+.moment-overlay { background: linear-gradient(to bottom,transparent 40%,rgba(9,7,7,.85)); }
+.moment-meta strong { color: #fff6e8; font-size: 22px; line-height: 1; }
+.moment-location { color: #fff6e8; font-family: var(--sans); font-size: 10px; }
+.gallery-outro { background: #f3eee7; border: 1px solid var(--ap-border); }
+.gallery-outro p { color: var(--ap-red-dark); font-size: 33px; line-height: 1.01; }
+.gallery-outro em { color: var(--ap-red-dark); font-style: normal; }
+.gallery-outro .btn-gold { background: var(--ap-red); color: white; border-color: var(--ap-red); }
+.gallery-outro .btn-gold:hover { background: var(--ap-red-hover); }
+.empty { color: #555; }
+
+/* Modal image overlay: off-white content, original text hierarchy. */
+.modal-backdrop { background: rgba(0,0,0,.84); }
+.moment-dialog { background: var(--ap-section); border: 0; }
+.dialog-body h2 { font-size: 34px; }
+.dialog-body > p:not(.mock-label) { color: #555; font-size: 13px; }
+.dialog-byline { color: #555; border-top-color: var(--ap-border); }
+
+@media (max-width: 450px) { .phone { border-radius: 0; } }
+@media (max-width: 365px) {
+ .site-header { padding-inline: 8px; }
+ .bridge-mark { width: 39px; height: 19px; }
+ .wordmark-live { font-size: 9px; }
+ .website-pill { padding-inline: 14px; gap: 6px; }
+ .interior-head h1 { font-size: 38px; }
+}

@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules
+.next
+out
+*.tsbuildinfo
+
+# Local environment files, credentials and keys
+.env*
+*.pem
+*.key
+.vercel
+
+# Logs and OS/editor clutter
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode
+.idea
+
+# Source folder for public/hero/ (byte-identical copies are committed there)
+hero-section.images
