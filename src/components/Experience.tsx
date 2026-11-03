@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, type FormEvent, type PointerEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, type PointerEvent, useEffect, useRef, useState } from "react";
+import Icon from "@/components/Icon";
+import CameraCapture from "@/components/share/CameraCapture";
+import LocationStep from "@/components/share/LocationStep";
+import { type CameraErrorKind, canUseCamera, consumeCameraRequest, requestCameraOnArrival } from "@/lib/share/camera";
+import type { ShareLocation } from "@/lib/share/location";
+import { type CapturedPhoto, photoFromFile, useObjectUrl } from "@/lib/share/photo";
+import { SUBMISSION_BACKEND_CONNECTED, type ShareSubmission } from "@/lib/share/submission";
 
 type Screen = "live" | "moments" | "share";
-// Share flow: review the photo, optional free-bottle invitation, thank-you.
-type ShareStage = "review" | "email" | "thankYou";
+// Share flow: take or choose a photo, optional location, review the photo, optional
+// free-bottle invitation, thank-you.
+type ShareStage = "start" | "camera" | "location" | "review" | "email" | "thankYou";
 type Language = "EN" | "FR" | "PT";
 // The A PONTE markets, in the institutional site's order (src/data/countries.ts), as
 // ISO 3166-1 alpha-2 codes. Any other country code is grouped under "Other".
@@ -57,8 +65,8 @@ const LANGUAGES: { code: Language; label: string; flagClass: string }[] = [
   { code: "EN", label: "English", flagClass: "fi-gb" },
   { code: "PT", label: "Português", flagClass: "fi-pt" },
 ];
-// Stands in for the photo the visitor has just taken (frontend demo: no camera, no upload).
-const CAPTURED_PHOTO = asset("/brand/image-2.png");
+// Blurred behind the Share screen until the visitor has taken or chosen their own photo.
+const SHARE_PLACEHOLDER_PHOTO = asset("/brand/image-2.png");
 const PHOTO = (id: string, width = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
 
 // Editorial, illustrative imagery — not actual A PONTE submissions. Replace before launch.
@@ -157,47 +165,35 @@ const SLIDE_COPY: Record<Language, { title: string; body: string }[]> = {
 
 const strings = {
   EN: {
-    permissionRequired: "Please accept the publication permission before continuing. We need your permission to display your photograph in the A PONTE gallery and potentially share it on our social media.", backToDiscover: "Back to Discover", bottleTitle: "Would you like to win a free bottle?", bottleBody: "Do you want to win a free bottle? Tell us your email so we can send you the code!", emailLabel: "Your email", emailPlaceholder: "you@example.com", emailRequired: "Please enter your email address.", emailInvalid: "Please enter a valid email address, e.g. you@example.com.", getCode: "Get My Code", noThanks: "No thanks", thanksTitle: "Thank you for sharing your experience with us!", checkInbox: "Check your inbox!", emailDemoNote: "Demo only: nothing was uploaded, no email was sent and no code was generated.", shareDemoNote: "Demo only: nothing was uploaded or submitted.", visitWebsite: "Visit Website",
+    permissionRequired: "Please accept the publication permission before continuing. We need your permission to display your photograph in the A PONTE gallery and potentially share it on our social media.", backToDiscover: "Back to Discover", bottleTitle: "Would you like to win a free bottle?", bottleBody: "Do you want to win a free bottle? Tell us your email so we can send you the code!", emailLabel: "Your email", emailPlaceholder: "you@example.com", emailRequired: "Please enter your email address.", emailInvalid: "Please enter a valid email address, e.g. you@example.com.", getCode: "Get My Code", noThanks: "No thanks", thanksTitle: "Thank you for sharing your experience with us!", checkInbox: "Check your inbox!", emailDemoNote: "Preview only: your photo stayed on this device. Nothing was uploaded or submitted for review, no email was sent and no code was generated.", shareDemoNote: "Preview only: your photo stayed on this device. Nothing was uploaded, stored or submitted for review.", visitWebsite: "Visit Website",
     captureTitle: "Share your experience", description: "Short description", descriptionPlaceholder: "Tell us about this moment...", permission: "I allow pontelusocan to use this photo in the discovery gallery and their social media in case it gets approved.", submitReview: "Submit for Review", 
     website: "Visit website", 
     galleryOutro1: "Every moment tells a story.", galleryOutro2: "What will yours be?", 
-    discover: "Discover", moments: "Moments", shareNav: "Share", featured: "A glimpse into our world", featuredSub: "Moments, made to be remembered.", viewAll: "View All", shareExperience: "Share Experience", fromCommunity: "THE COMMUNITY", galleryTitle: "Moments worth sharing.", galleryBody: "Different places. The same joy of coming together.", galleryEmpty: "No moments shared from this country yet.", close: "Close", name: "Your name", shortName: "Name", cancel: "Cancel", photoCredits: "Photo credits", creditsIntro: "City photographs from Wikimedia Commons, shown under the licences below.", source: "Source" },
+    discover: "Discover", moments: "Moments", shareNav: "Share", featured: "A glimpse into our world", featuredSub: "Moments, made to be remembered.", viewAll: "View All", shareExperience: "Share Experience", fromCommunity: "THE COMMUNITY", galleryTitle: "Moments worth sharing.", galleryBody: "Different places. The same joy of coming together.", galleryEmpty: "No moments shared from this country yet.", close: "Close", name: "Your name", shortName: "Name", cancel: "Cancel", photoCredits: "Photo credits", creditsIntro: "City photographs from Wikimedia Commons, shown under the licences below.", source: "Source",
+    startLede: "Take a photo of your moment with your A PONTE bottle.", openCamera: "Open Camera", nativeCamera: "Use my phone's camera", choosePhoto: "Choose from my photos", keepPhoto: "Keep my current photo", retakePhoto: "Retake photo", cameraLabel: "Camera", cameraStarting: "Starting camera…", capturePhoto: "Take photo", retake: "Retake", usePhoto: "Use photo", closeCamera: "Close camera", capturedAlt: "Your photo", cameraDenied: "Camera access was blocked. You can allow it in your browser settings, or use your phone's camera or a saved photo instead.", cameraUnsupported: "This browser can't open the camera here. Use your phone's camera or choose a saved photo instead.", cameraUnavailable: "No camera was found on this device. Choose a saved photo instead.", cameraBusy: "The camera is being used by another app. Close it and try again, or choose a saved photo.", cameraFailed: "The camera couldn't be started. Try again, or choose a saved photo.", captureFailed: "The photo couldn't be taken. Please try again.", photoUnreadable: "This photo couldn't be opened. Please choose a JPEG or PNG image.",
+    locationTitle: "Where was this moment?", locationLede: "Adding your city and country is optional. It helps place your moment in the gallery.", detectLocation: "Detect my location", locationDisclosure: "Your browser will ask for permission. Your approximate position is then sent to {provider}, an external service, only to look up your city and country. Your coordinates are not saved or shown.", locating: "Finding your location…", locationFound: "Location found. You can correct it below.", locationDenied: "Location access was declined. You can type your city and country instead.", locationTimeout: "Finding your location took too long. Try again or type it below.", locationUnavailable: "Your location isn't available right now. You can type it below.", locationUnsupported: "This browser can't share your location. You can type it below.", lookupFailed: "We couldn't find a city for your position. You can type it below.", city: "City", cityPlaceholder: "e.g. Lisbon", countryLabel: "Country", chooseCountry: "Choose a country", otherCountry: "Other country", otherCountryName: "Country name", continue: "Continue", skipLocation: "Skip", addLocation: "Add location" },
   FR: {
-    permissionRequired: "Veuillez accepter l'autorisation de publication avant de continuer. Nous avons besoin de votre autorisation pour afficher votre photo dans la galerie A PONTE et éventuellement la partager sur nos réseaux sociaux.", backToDiscover: "Retour à Découvrir", bottleTitle: "Envie de gagner une bouteille offerte ?", bottleBody: "Vous voulez gagner une bouteille offerte ? Indiquez-nous votre e-mail pour que nous puissions vous envoyer le code !", emailLabel: "Votre e-mail", emailPlaceholder: "vous@exemple.com", emailRequired: "Veuillez indiquer votre adresse e-mail.", emailInvalid: "Veuillez indiquer une adresse e-mail valide, par ex. vous@exemple.com.", getCode: "Recevoir mon code", noThanks: "Non merci", thanksTitle: "Merci d'avoir partagé votre expérience avec nous !", checkInbox: "Consultez votre boîte de réception !", emailDemoNote: "Démonstration : rien n'a été téléversé, aucun e-mail n'a été envoyé et aucun code n'a été généré.", shareDemoNote: "Démonstration : rien n'a été téléversé ni envoyé.", visitWebsite: "Visiter le site",
+    permissionRequired: "Veuillez accepter l'autorisation de publication avant de continuer. Nous avons besoin de votre autorisation pour afficher votre photo dans la galerie A PONTE et éventuellement la partager sur nos réseaux sociaux.", backToDiscover: "Retour à Découvrir", bottleTitle: "Envie de gagner une bouteille offerte ?", bottleBody: "Vous voulez gagner une bouteille offerte ? Indiquez-nous votre e-mail pour que nous puissions vous envoyer le code !", emailLabel: "Votre e-mail", emailPlaceholder: "vous@exemple.com", emailRequired: "Veuillez indiquer votre adresse e-mail.", emailInvalid: "Veuillez indiquer une adresse e-mail valide, par ex. vous@exemple.com.", getCode: "Recevoir mon code", noThanks: "Non merci", thanksTitle: "Merci d'avoir partagé votre expérience avec nous !", checkInbox: "Consultez votre boîte de réception !", emailDemoNote: "Aperçu uniquement : votre photo est restée sur cet appareil. Rien n'a été téléversé ni envoyé pour validation, aucun e-mail n'a été envoyé et aucun code n'a été généré.", shareDemoNote: "Aperçu uniquement : votre photo est restée sur cet appareil. Rien n'a été téléversé, enregistré ni envoyé pour validation.", visitWebsite: "Visiter le site",
     captureTitle: "Partagez votre expérience", description: "Courte description", descriptionPlaceholder: "Parlez-nous de ce moment...", permission: "J'autorise pontelusocan à utiliser cette photo dans la galerie découverte et sur ses réseaux sociaux si elle est approuvée.", submitReview: "Envoyer pour validation", 
     website: "Visiter le site", 
     galleryOutro1: "Chaque moment a une histoire.", galleryOutro2: "Quelle sera la vôtre ?", 
-    discover: "Découvrir", moments: "Moments", shareNav: "Partager", featured: "Un aperçu de notre univers", featuredSub: "Des instants à ne pas oublier.", viewAll: "Voir tout", shareExperience: "Partager une expérience", fromCommunity: "LA COMMUNAUTÉ", galleryTitle: "Des moments à partager.", galleryBody: "Des lieux différents, le même plaisir d'être ensemble.", galleryEmpty: "Aucun moment partagé depuis ce pays pour l'instant.", close: "Fermer", name: "Votre nom", shortName: "Nom", cancel: "Annuler", photoCredits: "Crédits photo", creditsIntro: "Photographies de villes issues de Wikimedia Commons, utilisées selon les licences ci-dessous.", source: "Source" },
+    discover: "Découvrir", moments: "Moments", shareNav: "Partager", featured: "Un aperçu de notre univers", featuredSub: "Des instants à ne pas oublier.", viewAll: "Voir tout", shareExperience: "Partager une expérience", fromCommunity: "LA COMMUNAUTÉ", galleryTitle: "Des moments à partager.", galleryBody: "Des lieux différents, le même plaisir d'être ensemble.", galleryEmpty: "Aucun moment partagé depuis ce pays pour l'instant.", close: "Fermer", name: "Votre nom", shortName: "Nom", cancel: "Annuler", photoCredits: "Crédits photo", creditsIntro: "Photographies de villes issues de Wikimedia Commons, utilisées selon les licences ci-dessous.", source: "Source",
+    startLede: "Prenez une photo de votre moment avec votre bouteille A PONTE.", openCamera: "Ouvrir l'appareil photo", nativeCamera: "Utiliser l'appareil photo du téléphone", choosePhoto: "Choisir dans mes photos", keepPhoto: "Garder ma photo actuelle", retakePhoto: "Reprendre la photo", cameraLabel: "Appareil photo", cameraStarting: "Ouverture de l'appareil photo…", capturePhoto: "Prendre la photo", retake: "Reprendre", usePhoto: "Utiliser la photo", closeCamera: "Fermer l'appareil photo", capturedAlt: "Votre photo", cameraDenied: "L'accès à l'appareil photo a été bloqué. Vous pouvez l'autoriser dans les réglages de votre navigateur, ou utiliser l'appareil photo de votre téléphone ou une photo enregistrée.", cameraUnsupported: "Ce navigateur ne peut pas ouvrir l'appareil photo ici. Utilisez l'appareil photo de votre téléphone ou choisissez une photo enregistrée.", cameraUnavailable: "Aucun appareil photo n'a été trouvé sur cet appareil. Choisissez plutôt une photo enregistrée.", cameraBusy: "L'appareil photo est utilisé par une autre application. Fermez-la et réessayez, ou choisissez une photo enregistrée.", cameraFailed: "Impossible de démarrer l'appareil photo. Réessayez ou choisissez une photo enregistrée.", captureFailed: "La photo n'a pas pu être prise. Veuillez réessayer.", photoUnreadable: "Cette photo n'a pas pu être ouverte. Choisissez une image JPEG ou PNG.",
+    locationTitle: "Où ce moment a-t-il eu lieu ?", locationLede: "Indiquer votre ville et votre pays est facultatif. Cela permet de situer votre moment dans la galerie.", detectLocation: "Détecter ma position", locationDisclosure: "Votre navigateur vous demandera l'autorisation. Votre position approximative est ensuite envoyée à {provider}, un service externe, uniquement pour trouver votre ville et votre pays. Vos coordonnées ne sont ni enregistrées ni affichées.", locating: "Recherche de votre position…", locationFound: "Position trouvée. Vous pouvez la corriger ci-dessous.", locationDenied: "L'accès à la position a été refusé. Vous pouvez saisir votre ville et votre pays.", locationTimeout: "La recherche de votre position a pris trop de temps. Réessayez ou saisissez-la ci-dessous.", locationUnavailable: "Votre position n'est pas disponible pour le moment. Vous pouvez la saisir ci-dessous.", locationUnsupported: "Ce navigateur ne peut pas partager votre position. Vous pouvez la saisir ci-dessous.", lookupFailed: "Nous n'avons pas trouvé de ville pour votre position. Vous pouvez la saisir ci-dessous.", city: "Ville", cityPlaceholder: "ex. Lisbonne", countryLabel: "Pays", chooseCountry: "Choisir un pays", otherCountry: "Autre pays", otherCountryName: "Nom du pays", continue: "Continuer", skipLocation: "Passer", addLocation: "Ajouter un lieu" },
   PT: {
-    permissionRequired: "Aceite a autorização de publicação antes de continuar. Precisamos da sua autorização para mostrar a sua fotografia na galeria A PONTE e, eventualmente, partilhá-la nas nossas redes sociais.", backToDiscover: "Voltar a Descobrir", bottleTitle: "Quer ganhar uma garrafa grátis?", bottleBody: "Quer ganhar uma garrafa grátis? Diga-nos o seu email para lhe enviarmos o código!", emailLabel: "O seu email", emailPlaceholder: "o.seu@exemplo.com", emailRequired: "Indique o seu endereço de email.", emailInvalid: "Indique um endereço de email válido, por ex. o.seu@exemplo.com.", getCode: "Receber o meu código", noThanks: "Não, obrigado", thanksTitle: "Obrigado por partilhar a sua experiência connosco!", checkInbox: "Verifique a sua caixa de entrada!", emailDemoNote: "Demonstração: nada foi carregado, nenhum email foi enviado e nenhum código foi gerado.", shareDemoNote: "Demonstração: nada foi carregado nem enviado.", visitWebsite: "Visitar o site",
+    permissionRequired: "Aceite a autorização de publicação antes de continuar. Precisamos da sua autorização para mostrar a sua fotografia na galeria A PONTE e, eventualmente, partilhá-la nas nossas redes sociais.", backToDiscover: "Voltar a Descobrir", bottleTitle: "Quer ganhar uma garrafa grátis?", bottleBody: "Quer ganhar uma garrafa grátis? Diga-nos o seu email para lhe enviarmos o código!", emailLabel: "O seu email", emailPlaceholder: "o.seu@exemplo.com", emailRequired: "Indique o seu endereço de email.", emailInvalid: "Indique um endereço de email válido, por ex. o.seu@exemplo.com.", getCode: "Receber o meu código", noThanks: "Não, obrigado", thanksTitle: "Obrigado por partilhar a sua experiência connosco!", checkInbox: "Verifique a sua caixa de entrada!", emailDemoNote: "Apenas pré-visualização: a sua fotografia ficou neste dispositivo. Nada foi carregado nem enviado para revisão, nenhum email foi enviado e nenhum código foi gerado.", shareDemoNote: "Apenas pré-visualização: a sua fotografia ficou neste dispositivo. Nada foi carregado, guardado nem enviado para revisão.", visitWebsite: "Visitar o site",
     captureTitle: "Partilhe a sua experiência", description: "Breve descrição", descriptionPlaceholder: "Fale-nos deste momento...", permission: "Autorizo a pontelusocan a utilizar esta fotografia na galeria de descoberta e nas suas redes sociais, caso seja aprovada.", submitReview: "Enviar para revisão", 
     website: "Visitar o site", 
     galleryOutro1: "Cada momento conta uma história.", galleryOutro2: "Qual será a sua?", 
-    discover: "Descobrir", moments: "Momentos", shareNav: "Partilhar", featured: "Um pouco do nosso mundo", featuredSub: "Momentos que merecem ser recordados.", viewAll: "Ver tudo", shareExperience: "Partilhar experiência", fromCommunity: "A COMUNIDADE", galleryTitle: "Momentos para partilhar.", galleryBody: "Lugares diferentes. O mesmo prazer de estar juntos.", galleryEmpty: "Ainda não há momentos partilhados deste país.", close: "Fechar", name: "O seu nome", shortName: "Nome", cancel: "Cancelar", photoCredits: "Créditos fotográficos", creditsIntro: "Fotografias das cidades provenientes do Wikimedia Commons, utilizadas ao abrigo das licenças abaixo.", source: "Fonte" },
+    discover: "Descobrir", moments: "Momentos", shareNav: "Partilhar", featured: "Um pouco do nosso mundo", featuredSub: "Momentos que merecem ser recordados.", viewAll: "Ver tudo", shareExperience: "Partilhar experiência", fromCommunity: "A COMUNIDADE", galleryTitle: "Momentos para partilhar.", galleryBody: "Lugares diferentes. O mesmo prazer de estar juntos.", galleryEmpty: "Ainda não há momentos partilhados deste país.", close: "Fechar", name: "O seu nome", shortName: "Nome", cancel: "Cancelar", photoCredits: "Créditos fotográficos", creditsIntro: "Fotografias das cidades provenientes do Wikimedia Commons, utilizadas ao abrigo das licenças abaixo.", source: "Fonte",
+    startLede: "Tire uma fotografia do seu momento com a sua garrafa A PONTE.", openCamera: "Abrir câmara", nativeCamera: "Usar a câmara do telemóvel", choosePhoto: "Escolher das minhas fotografias", keepPhoto: "Manter a fotografia atual", retakePhoto: "Repetir fotografia", cameraLabel: "Câmara", cameraStarting: "A abrir a câmara…", capturePhoto: "Tirar fotografia", retake: "Repetir", usePhoto: "Usar fotografia", closeCamera: "Fechar câmara", capturedAlt: "A sua fotografia", cameraDenied: "O acesso à câmara foi bloqueado. Pode autorizá-lo nas definições do navegador, ou usar a câmara do telemóvel ou uma fotografia guardada.", cameraUnsupported: "Este navegador não consegue abrir a câmara aqui. Use a câmara do telemóvel ou escolha uma fotografia guardada.", cameraUnavailable: "Não foi encontrada nenhuma câmara neste dispositivo. Escolha antes uma fotografia guardada.", cameraBusy: "A câmara está a ser usada por outra aplicação. Feche-a e tente novamente, ou escolha uma fotografia guardada.", cameraFailed: "Não foi possível iniciar a câmara. Tente novamente ou escolha uma fotografia guardada.", captureFailed: "Não foi possível tirar a fotografia. Tente novamente.", photoUnreadable: "Não foi possível abrir esta fotografia. Escolha uma imagem JPEG ou PNG.",
+    locationTitle: "Onde foi este momento?", locationLede: "Indicar a sua cidade e país é opcional. Ajuda a situar o seu momento na galeria.", detectLocation: "Detetar a minha localização", locationDisclosure: "O seu navegador irá pedir autorização. A sua posição aproximada é depois enviada à {provider}, um serviço externo, apenas para encontrar a sua cidade e país. As suas coordenadas não são guardadas nem mostradas.", locating: "A procurar a sua localização…", locationFound: "Localização encontrada. Pode corrigi-la abaixo.", locationDenied: "O acesso à localização foi recusado. Pode escrever a sua cidade e país.", locationTimeout: "A procura da sua localização demorou demasiado. Tente novamente ou escreva-a abaixo.", locationUnavailable: "A sua localização não está disponível neste momento. Pode escrevê-la abaixo.", locationUnsupported: "Este navegador não consegue partilhar a sua localização. Pode escrevê-la abaixo.", lookupFailed: "Não encontrámos uma cidade para a sua posição. Pode escrevê-la abaixo.", city: "Cidade", cityPlaceholder: "ex. Lisboa", countryLabel: "País", chooseCountry: "Escolher um país", otherCountry: "Outro país", otherCountryName: "Nome do país", continue: "Continuar", skipLocation: "Saltar", addLocation: "Adicionar localização" },
 } satisfies Record<Language, Record<string, string>>;
+export type Text = typeof strings.EN;
 
-function Icon({ name, size = 19, stroke = 1.6 }: { name: string; size?: number; stroke?: number }) {
-  const paths: Record<string, ReactNode> = {
-    compass: <><circle cx="12" cy="12" r="9"/><path d="m16 8-2.6 5.4L8 16l2.6-5.4L16 8Z"/></>,
-    images: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 16-5.5-5.5L5 21"/></>,
-    plus: <><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></>,
-    play: <path d="m8.5 5.5 10 6.5-10 6.5v-13Z"/>,
-    arrow: <><path d="M4 12h16"/><path d="m14 6 6 6-6 6"/></>,
-    left: <><path d="m15 18-6-6 6-6"/></>,
-    back: <><path d="M20 12H4"/><path d="m10 18-6-6 6-6"/></>,
-    right: <><path d="m9 18 6-6-6-6"/></>,
-    x: <><path d="m5 5 14 14M19 5 5 19"/></>,
-    pin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></>,
-    camera: <><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="3"/></>,
-    globe: <><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></>,
-    check: <><path d="m5 12 4.5 4.5L19 7"/></>,
-    upload: <><path d="M12 16V3m-5 5 5-5 5 5"/><path d="M4 17v4h16v-4"/></>,
-    external: <><path d="M10 5H5v14h14v-5"/><path d="M14 5h5v5M19 5l-9 9"/></>,
-    wine: <><path d="M7 3h10v5c0 4-2 6-5 6S7 12 7 8V3ZM12 14v7m-5 0h10M7 8h10"/></>,
-    circle: <><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></>,
-  };
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.compass}</svg>;
-}
+const CAMERA_MESSAGES: Record<CameraErrorKind, keyof Text> = {
+  unsupported: "cameraUnsupported", denied: "cameraDenied", unavailable: "cameraUnavailable", busy: "cameraBusy", failed: "cameraFailed",
+};
 
 function Wordmark({ live = true }: { live?: boolean }) {
   return <span className="brand-lockup"><img className="bridge-mark" src={asset("/brand/logo.png")} alt=""/>{live && <><span className="wordmark-divider"/><span className="wordmark-live">LIVE</span></>}</span>;
@@ -231,14 +227,14 @@ function HeroLayer({ src, motion, fadeIn }: { src: string; motion: HeroMotion; f
 }
 
 function ShareExperienceLink({ label }: { label: string }) {
-  return <Link href="/live/share" className="btn btn-white share-experience"><Icon name="camera" size={16}/>{label}</Link>;
+  return <Link href="/live/share" className="btn btn-white share-experience" onClick={requestCameraOnArrival}><Icon name="camera" size={16}/>{label}</Link>;
 }
 
 function Nav({ current, text }: { current: Screen; text: typeof strings.EN }) {
   return <nav className="bottom-nav" aria-label="A PONTE Live navigation">
     <Link href="/live" className={`nav-link ${current === "live" ? "active" : ""}`} aria-current={current === "live" ? "page" : undefined}><Icon name="compass" size={20}/><span>{text.discover}</span></Link>
     <Link href="/live/moments" className={`nav-link ${current === "moments" ? "active" : ""}`} aria-current={current === "moments" ? "page" : undefined}><Icon name="images" size={20}/><span>{text.moments}</span></Link>
-    <Link href="/live/share" className={`nav-link ${current === "share" ? "active" : ""}`} aria-current={current === "share" ? "page" : undefined}><Icon name="plus" size={20}/><span>{text.shareNav}</span></Link>
+    <Link href="/live/share" className={`nav-link ${current === "share" ? "active" : ""}`} aria-current={current === "share" ? "page" : undefined} onClick={requestCameraOnArrival}><Icon name="plus" size={20}/><span>{text.shareNav}</span></Link>
   </nav>;
 }
 
@@ -254,8 +250,18 @@ export default function Experience({ screen }: { screen: Screen }) {
   const creditsTrigger = useRef<HTMLButtonElement>(null);
   const creditsWasOpen = useRef(false);
   const [formError, setFormError] = useState(false);
-  const [stage, setStage] = useState<ShareStage>("review");
+  const [stage, setStage] = useState<ShareStage>("start");
   const [leavingStage, setLeavingStage] = useState(false);
+  const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
+  const photoUrl = useObjectUrl(photo?.file ?? null);
+  const [cameraError, setCameraError] = useState<CameraErrorKind | null>(null);
+  const [photoError, setPhotoError] = useState(false);
+  const [location, setLocation] = useState<ShareLocation | null>(null);
+  const locationAnswered = useRef(false);
+  // No backend yet: the prepared submission stays in memory and is never sent (lib/share/submission.ts).
+  const submission = useRef<ShareSubmission | null>(null);
+  const nativeCameraInput = useRef<HTMLInputElement>(null);
+  const photoLibraryInput = useRef<HTMLInputElement>(null);
   const [emailChoice, setEmailChoice] = useState<"provided" | "declined">("declined");
   const [consent, setConsent] = useState(false);
   const [name, setName] = useState("");
@@ -309,6 +315,14 @@ export default function Experience({ screen }: { screen: Screen }) {
       setHeroText((s) => (s.leaving ? { ...s, leaving: false } : s));
     };
   }, [screen, pageVisible]);
+
+  // Share opens the camera straight away when the visitor got here by tapping a Share link;
+  // otherwise the start screen offers Open Camera. Never requested on any other screen.
+  useEffect(() => {
+    if (screen !== "share") return;
+    if (!canUseCamera()) setCameraError("unsupported");
+    else if (consumeCameraRequest()) setStage("camera");
+  }, [screen]);
 
   // Each new share stage starts at the top, with focus on its heading.
   useEffect(() => {
@@ -386,10 +400,66 @@ export default function Experience({ screen }: { screen: Screen }) {
     window.setTimeout(() => { setStage(next); setLeavingStage(false); }, 180);
   }
 
+  // Denied, unsupported and missing cameras won't change on a retry; the photo inputs remain.
+  const cameraAvailable = cameraError === null || cameraError === "busy" || cameraError === "failed";
+
+  // Immediate rather than faded, so getUserMedia runs in the same tap.
+  function openCameraView() {
+    setCameraError(null);
+    setPhotoError(false);
+    stageChanged.current = true;
+    setStage("camera");
+  }
+
+  function handleCameraError(kind: CameraErrorKind) {
+    setCameraError(kind);
+    stageChanged.current = true;
+    setStage("start");
+  }
+
+  function acceptPhoto(next: CapturedPhoto) {
+    setPhoto(next);
+    setPhotoError(false);
+    // A retake goes back to the form; the location question is only asked once.
+    goToStage(locationAnswered.current ? "review" : "location");
+  }
+
+  async function handlePhotoFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      acceptPhoto(await photoFromFile(file));
+    } catch {
+      setPhotoError(true);
+    }
+  }
+
+  function retakePhoto() {
+    if (cameraAvailable) openCameraView();
+    else goToStage("start");
+  }
+
+  function handleLocation(next: ShareLocation | null) {
+    setLocation(next);
+    locationAnswered.current = true;
+    goToStage("review");
+  }
+
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!photo) { goToStage("start"); return; }
     if (!consent) { setFormError(true); return; }
     setFormError(false);
+    submission.current = {
+      photo,
+      name: name.trim(),
+      description: description.trim(),
+      publicationConsent: true,
+      location: location && { city: location.city, countryCode: location.countryCode, country: location.country },
+      email: null,
+      language: lang,
+    };
     goToStage("email");
   }
 
@@ -400,6 +470,7 @@ export default function Experience({ screen }: { screen: Screen }) {
     if (!EMAIL_PATTERN.test(value)) { setEmailError("invalid"); return; }
     setEmailError("");
     setEmailChoice("provided");
+    if (submission.current) submission.current.email = value;
     goToStage("thankYou");
   }
 
@@ -407,8 +478,8 @@ export default function Experience({ screen }: { screen: Screen }) {
 
   return <main className="demo-stage">
     <div className={`phone phone-${screen}`} id="phone">
-      {screen === "share" && <div className="capture-backdrop" aria-hidden="true"><img src={CAPTURED_PHOTO} alt=""/></div>}
-      {screen === "share" && <Link href="/live" className="capture-close" aria-label={t.backToDiscover}><Icon name="back" size={20}/></Link>}
+      {screen === "share" && <div className="capture-backdrop" aria-hidden="true"><img src={photoUrl ?? SHARE_PLACEHOLDER_PHOTO} alt=""/></div>}
+      {screen === "share" && stage !== "camera" && <Link href="/live" className="capture-close" aria-label={t.backToDiscover}><Icon name="back" size={20}/></Link>}
       <div className="phone-safe"/>
       {screen !== "share" && <header className="site-header">
         <Link href="/live" aria-label="A PONTE Live home" className="logo-link"><Wordmark/></Link>
@@ -450,8 +521,27 @@ export default function Experience({ screen }: { screen: Screen }) {
 
         {screen === "share" && <section className="capture-screen">
           <div key={stage} ref={stageRef} className={`capture-stage ${leavingStage ? "leaving" : ""}`}>
+            {stage === "start" && <div className="capture-form capture-centered">
+              <h1 tabIndex={-1}>{t.captureTitle}</h1>
+              <p className="capture-lede">{t.startLede}</p>
+              {cameraError && <p className="capture-error" role="alert">{t[CAMERA_MESSAGES[cameraError]]}</p>}
+              {photoError && <p className="capture-error" role="alert">{t.photoUnreadable}</p>}
+              {cameraAvailable
+                ? <button type="button" className="btn btn-white capture-submit" onClick={openCameraView}><Icon name="camera" size={16}/>{t.openCamera}</button>
+                : cameraError !== "unavailable" && <button type="button" className="btn btn-white capture-submit" onClick={() => nativeCameraInput.current?.click()}><Icon name="camera" size={16}/>{t.nativeCamera}</button>}
+              <button type="button" className={cameraError === "unavailable" ? "btn btn-white capture-submit" : "capture-skip"} onClick={() => photoLibraryInput.current?.click()}>{t.choosePhoto}</button>
+              {photo && <button type="button" className="capture-skip" onClick={() => goToStage(locationAnswered.current ? "review" : "location")}>{t.keepPhoto}</button>}
+              {/* Fallbacks that need no camera permission: the phone's own camera app, or its photo picker. */}
+              <input ref={nativeCameraInput} type="file" accept="image/*" capture="environment" className="visually-hidden" tabIndex={-1} aria-hidden="true" onChange={handlePhotoFile}/>
+              <input ref={photoLibraryInput} type="file" accept="image/*" className="visually-hidden" tabIndex={-1} aria-hidden="true" onChange={handlePhotoFile}/>
+            </div>}
+            {stage === "location" && <LocationStep text={t} language={lang.toLowerCase()} markets={MARKETS.map((code) => ({ code, label: FILTER_LABELS[code][lang] }))} initial={location} onDone={handleLocation}/>}
             {stage === "review" && <form onSubmit={handleSubmit} className="capture-form" noValidate>
               <h1 tabIndex={-1}>{t.captureTitle}</h1>
+              <div className="capture-meta">
+                <button type="button" onClick={() => goToStage("location")}><Icon name="pin" size={14}/>{location ? [location.city, location.country].filter(Boolean).join(", ") : t.addLocation}</button>
+                <button type="button" onClick={retakePhoto}><Icon name="camera" size={14}/>{t.retakePhoto}</button>
+              </div>
               <label>{t.name}<input placeholder={t.name} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} autoComplete="name"/></label>
               <label>{t.description}<textarea rows={3} placeholder={t.descriptionPlaceholder} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300}/></label>
               <label className="capture-consent"><input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); if (e.target.checked) setFormError(false); }}/><span className="capture-check" aria-hidden="true"><Icon name="check" size={13} stroke={2.4}/></span><span>{t.permission}</span></label>
@@ -469,13 +559,19 @@ export default function Experience({ screen }: { screen: Screen }) {
             </form>}
             {stage === "thankYou" && <div className="capture-form capture-centered" role="status">
               <h1 tabIndex={-1}>{t.thanksTitle}</h1>
-              {emailChoice === "provided" && <p className="capture-lede">{t.checkInbox}</p>}
+              {/* No email is sent until a backend exists, so the inbox prompt stays hidden. */}
+              {emailChoice === "provided" && SUBMISSION_BACKEND_CONNECTED && <p className="capture-lede">{t.checkInbox}</p>}
               <a className="btn btn-white capture-submit" href={COMPANY_URL} target="_blank" rel="noopener noreferrer">{t.visitWebsite}<Icon name="external" size={15}/></a>
-              <p className="capture-demo-note">{emailChoice === "provided" ? t.emailDemoNote : t.shareDemoNote}</p>
+              {!SUBMISSION_BACKEND_CONNECTED && <p className="capture-demo-note">{emailChoice === "provided" ? t.emailDemoNote : t.shareDemoNote}</p>}
             </div>}
           </div>
         </section>}
       </div>
+
+      {screen === "share" && stage === "camera" && <CameraCapture text={t} onCapture={acceptPhoto} onError={handleCameraError} onCancel={() => {
+        stageChanged.current = true;
+        setStage(!photo ? "start" : locationAnswered.current ? "review" : "location");
+      }}/>}
 
       {screen !== "share" && <Nav current={screen} text={t}/>}
       <div className="phone-bottom-safe"/>

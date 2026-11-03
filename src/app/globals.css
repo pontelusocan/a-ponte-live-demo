@@ -190,9 +190,9 @@ p { line-height: 1.6; }
 .capture-centered .capture-field { text-align: left; }
 .capture-lede { color: #e5e5e5; font-size: 14px; font-weight: 300; line-height: 1.6; }
 .capture-form label { display: flex; flex-direction: column; gap: 8px; color: #e5e5e5; font-size: 13px; font-weight: 400; }
-.capture-form input:not([type=checkbox]), .capture-form textarea { display: block; width: 100%; min-height: 45px; padding: 12px 13px; font-size: 13px; font-weight: 400; color: #e5e5e5; background: rgba(18,20,21,.72); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; color-scheme: dark; transition: border-color .35s cubic-bezier(.16,1,.3,1); }
+.capture-form input:not([type=checkbox]), .capture-form textarea, .capture-form select { display: block; width: 100%; min-height: 45px; padding: 12px 13px; font-size: 13px; font-weight: 400; color: #e5e5e5; background: rgba(18,20,21,.72); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; color-scheme: dark; transition: border-color .35s cubic-bezier(.16,1,.3,1); }
 .capture-form textarea { resize: none; line-height: 1.5; }
-.capture-form input:not([type=checkbox]):focus, .capture-form textarea:focus { border-color: #d4a358; }
+.capture-form input:not([type=checkbox]):focus, .capture-form textarea:focus, .capture-form select:focus { border-color: #d4a358; }
 .capture-form input::placeholder, .capture-form textarea::placeholder { color: #8d8b85; }
 /* Permission: the whole label is the hit area; the native box stays focusable under the custom one. */
 .capture-form .capture-consent { position: relative; flex-direction: row; align-items: flex-start; gap: 12px; min-height: 44px; padding-top: 2px; color: #b0b0b0; font-size: 12px; font-weight: 300; line-height: 1.6; cursor: pointer; }
@@ -210,6 +210,28 @@ p { line-height: 1.6; }
 .capture-skip { align-self: center; min-height: 44px; padding: 0 16px; margin-top: -6px; background: none; border: 0; color: #b0b0b0; font-size: 13px; font-weight: 300; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; transition: color .2s ease; }
 .capture-skip:hover { color: #fff; }
 .capture-demo-note { color: #b0b0b0; font-size: 11px; font-weight: 300; line-height: 1.6; }
+/* Small print in the location step: third-party disclosure and lookup progress. */
+.capture-note { color: #b0b0b0; font-size: 11px; font-weight: 300; line-height: 1.6; margin-top: -8px; }
+.capture-location-status { color: #e5e5e5; font-size: 12px; }
+.capture-location-status:empty { display: none; }
+/* Location and retake shortcuts under the review title. */
+.capture-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 18px; margin-top: -10px; }
+.capture-meta button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; background: none; border: 0; color: #b0b0b0; font-size: 12px; font-weight: 300; text-decoration: underline; text-underline-offset: 4px; transition: color .2s ease; }
+.capture-meta button:hover { color: #fff; }
+
+/* Live camera: full screen over the phone, above the Share screen and its back control. */
+.camera-view { position: absolute; inset: 0; z-index: 20; background: #000; color: #e5e5e5; overflow: hidden; }
+.camera-video, .camera-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Front cameras preview like a mirror; the saved photo is not mirrored, so labels read correctly. */
+.camera-video.is-mirrored { transform: scaleX(-1); }
+.camera-status { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; font-weight: 300; }
+.camera-error { position: absolute; z-index: 2; top: 76px; left: 22px; right: 22px; padding: 10px 12px; border-radius: 4px; background: rgba(0,0,0,.6); color: #e5574f; font-size: 12px; line-height: 1.6; }
+.camera-controls { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 12px; padding: 40px 22px calc(32px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.55)); }
+.camera-controls .btn { flex: 1; }
+.camera-shutter { width: 76px; height: 76px; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 4px solid #fff; background: transparent; }
+.camera-shutter::after { content: ""; width: 60px; height: 60px; border-radius: 50%; background: #fff; transition: transform .15s ease; }
+.camera-shutter:active:not(:disabled)::after { transform: scale(.88); }
+.camera-shutter:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 
 /* Photo detail overlay */
 .modal-backdrop { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 17px; background: rgba(0,0,0,.90); }

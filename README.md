@@ -11,7 +11,7 @@ It is a design demonstration. All content is illustrative, and every interaction
 | `/scan` | The A PONTE brand film, with links to A PONTE Live and the A PONTE website |
 | `/live` | Cinematic photo slideshow and a community carousel of cities |
 | `/live/moments` | A gallery of sample moments, filterable by country, with photo detail views |
-| `/live/share` | A simulated "share your moment" flow, ending in a confirmation screen |
+| `/live/share` | The "share your moment" flow: real camera capture (or a photo from the phone), optional city/country detection, the review form and a confirmation screen. Submission is still simulated |
 
 The interface is available in English, French and Portuguese. On desktop the experience is shown inside a phone frame.
 
@@ -19,7 +19,8 @@ The interface is available in English, French and Portuguese. On desktop the exp
 
 This prototype has no backend. In particular:
 
-- Photo submissions are not uploaded, stored or sent anywhere.
+- Photo submissions are not uploaded, stored or sent anywhere. The captured photo and form values are prepared in the browser (`src/lib/share/submission.ts`) and discarded when the page closes.
+- Location is optional. When the visitor asks for it, their approximate position (rounded to about 1 km) is sent once to BigDataCloud's free reverse-geocoding service to find the city and country; coordinates are not kept.
 - There is no moderation of shared moments.
 - No email notifications or mailing-list subscriptions are sent.
 - No promotional codes or rewards are issued.
