@@ -214,6 +214,19 @@ p { line-height: 1.6; }
 .capture-note { color: #b0b0b0; font-size: 11px; font-weight: 300; line-height: 1.6; margin-top: -8px; }
 .capture-location-status { color: #e5e5e5; font-size: 12px; }
 .capture-location-status:empty { display: none; }
+.capture-location-status.is-locating { margin-top: -10px; text-align: center; font-size: 13px; }
+/* Location loader: the glass outline stays still; the wine rises, holds, drains, with a slow surface swell. */
+.wine-glass { display: block; align-self: center; width: 52px; height: 78px; margin-top: 2px; animation: capture-in .3s cubic-bezier(.16,1,.3,1) backwards; }
+.wine-glass-outline { fill: none; stroke: rgba(255,255,255,.88); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.wine-level { transform: translateY(35px); animation: wine-level 1.8s cubic-bezier(.45,0,.55,1) infinite; }
+.wine-wave { animation: wine-wave 1.2s linear infinite; }
+@keyframes wine-level { 0%, 100% { transform: translateY(35px); } 45%, 55% { transform: translateY(15px); } }
+@keyframes wine-wave { to { transform: translateX(-24px); } }
+/* Reduced motion: a still, half-full glass beside the status text. */
+@media (prefers-reduced-motion: reduce) {
+  .wine-glass, .wine-level, .wine-wave { animation: none; }
+  .wine-level { transform: translateY(21px); }
+}
 /* Location and retake shortcuts under the review title. */
 .capture-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 18px; margin-top: -10px; }
 .capture-meta button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; background: none; border: 0; color: #b0b0b0; font-size: 12px; font-weight: 300; text-decoration: underline; text-underline-offset: 4px; transition: color .2s ease; }

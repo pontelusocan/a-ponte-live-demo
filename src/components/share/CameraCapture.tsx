@@ -60,11 +60,21 @@ export default function CameraCapture({ text, onCapture, onCancel, onError }: {
   }, [captured, session]);
 
   // A hidden page must not keep the camera open; it restarts when the visitor comes back.
+  // Only a running camera is paused: some phones hide the page while their native permission
+  // dialog is open, and restarting then would send a second camera request behind it.
   useEffect(() => {
     if (captured) return;
+    let paused = false;
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") { release(); setStatus("starting"); }
-      else setSession((n) => n + 1);
+      if (document.visibilityState === "hidden") {
+        if (!stream.current) return;
+        release();
+        paused = true;
+        setStatus("starting");
+      } else if (paused) {
+        paused = false;
+        setSession((n) => n + 1);
+      }
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
