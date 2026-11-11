@@ -126,7 +126,8 @@ p { font-family: var(--sans); font-weight: 300; line-height: 1.6; }
 .hero-dark { background: linear-gradient(180deg,rgba(15,15,15,.42) 0%,rgba(15,15,15,.05) 30%,rgba(17,13,13,.38) 55%,rgba(13,10,10,.92) 100%); }
 .hero-content { bottom: 82px; }
 .hero-content h1 { font-family: var(--serif); text-transform: uppercase; font-size: 64px; line-height: 1; letter-spacing: .02em; color: #fff6e8; max-width: 345px; }
-.hero-content p { color: #fff6e8; font-size: 13px; font-weight: 300; margin-top: 11px; }
+.hero-content p, .private-circle > p { color: #fff6e8; font-size: 13px; font-weight: 300; line-height: 1.6; }
+.hero-content p { margin-top: 11px; }
 .slide-arrows button { border-color: rgba(255,255,255,.60); }
 .featured-section { margin-top: 34px; }
 .featured-section h2, .private-circle h2 { font-size: 33px; line-height: 1; }

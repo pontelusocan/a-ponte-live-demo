@@ -3,7 +3,7 @@
   text-align: center;
 }
 .private-circle h2 { margin: 0 0 2rem; }
-.private-circle p { max-width: 37ch; margin: .8rem auto; line-height: 1.55; }
+.private-circle p { max-width: 37ch; margin: .8rem auto; }
 .circle-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; padding: 0; list-style: none; }
 .circle-steps li { display: grid; justify-items: center; align-content: start; gap: .55rem; font-size: .85rem; }
 .circle-steps svg { color: #fff; }
@@ -66,6 +66,7 @@
 }
 .camera-view .camera-video-blurred { filter: blur(14px) brightness(.55); }
 .camera-intro { position: absolute; inset: 0; z-index: 2; overflow-y: auto; }
+.camera-intro > .capture-form { margin-block: auto; }
 .circle-camera-fallback { background: radial-gradient(ellipse at top, #301d1b, #100d0e 75%); }
 .member-panel { margin: 1.3rem auto; width: min(100%, 27rem); }
 .member-panel h2 { margin-bottom: 0; }

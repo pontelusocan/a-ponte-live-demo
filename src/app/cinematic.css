@@ -69,7 +69,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .featured-section > p, .interior-head p,
 .empty { color: var(--cine-description); }
 /* Copy set over photographs. */
-.hero-content p, .dialog-body > p:not(.mock-label) { color: var(--cine-foreground); }
+.hero-content p, .private-circle > p, .dialog-body > p:not(.mock-label) { color: var(--cine-foreground); }
 .eyebrow, .gold-text { color: var(--cine-accent); }
 
 /* Header stays cream, as on the institutional site (#fff6e8, the Hero
