@@ -2,8 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import Icon from "./Icon";
-import Link from "next/link";
-import { requestCameraOnArrival } from "@/lib/share/camera";
 import { STAGING_UPLOADS } from "@/lib/share/submission";
 
 export type LiveLanguage = "EN" | "FR" | "PT";
@@ -83,7 +81,7 @@ export default function PrivateCircle({ language }: { language: LiveLanguage }) 
   const labels = STAGING_UPLOADS ? [...copy.benefits, ...copy.ideas] : copy.benefits;
   return <section className="private-circle" aria-labelledby="circle-heading">
     <h2 id="circle-heading">{copy.title}</h2>
-    <ol className="circle-steps">{copy.steps.map((step, i) => <li key={step}><Icon name={["camera", "connection", "sparkle"][i]} size={25}/><span>{step}</span></li>)}</ol>
+    <ol className="circle-steps">{copy.steps.map((step, i) => <li key={step}><Icon name={["camera", "engagement", "unlock"][i]} size={25}/><span>{step}</span></li>)}</ol>
     <p>{copy.body}</p>
     <p className="circle-note">{copy.note}</p>
     <div ref={strip} className="circle-strip" role="region" aria-label={copy.steps[2]} tabIndex={0}
@@ -92,6 +90,5 @@ export default function PrivateCircle({ language }: { language: LiveLanguage }) 
       onWheel={() => { pauseUntil.current = performance.now() + 5000; }}>
       {[0, 1, 2].map(i => <ul key={i} ref={i === 0 ? row : undefined} aria-hidden={i ? true : undefined}>{labels.map(label => <li key={label}>{label}</li>)}</ul>)}
     </div>
-    <Link href="/live/share" onClick={requestCameraOnArrival} className="btn btn-white">{copy.share}</Link>
   </section>;
 }

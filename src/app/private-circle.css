@@ -1,14 +1,13 @@
 .private-circle {
   padding: 2.5rem 1.35rem;
   text-align: center;
-  background: radial-gradient(ellipse at top, #301d1b, #100d0e 75%);
-  border-block: 1px solid #493837;
 }
-.private-circle h2 { margin: 0 0 1.3rem; font-size: clamp(1.7rem, 6vw, 2.2rem); }
+.private-circle h2 { margin: 0 0 1.3rem; }
 .private-circle p { max-width: 37ch; margin: .8rem auto; line-height: 1.55; }
 .circle-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; padding: 0; list-style: none; }
 .circle-steps li { display: grid; justify-items: center; align-content: start; gap: .55rem; font-size: .85rem; }
-.circle-steps svg { color: #dfb683; }
+.circle-steps svg { color: #fff; }
+.circle-steps + p { margin-top: 1.65rem; }
 .circle-note { color: #d1c0b6; font-size: .86rem; }
 .circle-strip { display: flex; overflow-x: auto; scrollbar-width: none; margin: 1.2rem -1.35rem; }
 .circle-strip::-webkit-scrollbar { display: none; }

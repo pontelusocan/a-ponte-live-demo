@@ -45,7 +45,7 @@
 button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline-color: #fff; }
 
 /* Countries .countryTitle treatment for every display heading, at mobile sizes. */
-.phone .hero-content h1, .phone .featured-section h2,
+.phone .hero-content h1, .phone .featured-section h2, .phone .private-circle h2,
 .phone .interior-head h1, .phone .moment-meta strong, .phone .gallery-outro p,
 .phone .featured-view-all span, .phone .capture-form h1, .phone .dialog-body h2 {
   font-family: var(--font-countries);

@@ -583,11 +583,11 @@ export default function Experience({ screen }: { screen: Screen }) {
             <div className="hero-content"><div key={heroText.index} className={`hero-copy ${heroText.entering ? "is-entering" : ""} ${heroText.leaving ? "is-leaving" : ""}`}><h1>{SLIDE_COPY[lang][heroText.index].title}</h1><p>{SLIDE_COPY[lang][heroText.index].body}</p></div></div>
             <div className="slide-controls"><div className="slide-arrows"><button type="button" aria-label="Previous photo" onClick={() => showPhoto(-1)}><Icon name="left"/></button><button type="button" aria-label="Next photo" onClick={() => showPhoto(1)}><Icon name="right"/></button></div></div>
           </div>
-          <PrivateCircle language={lang}/>
           <section className="featured-section"><span className="eyebrow gold-text">{t.fromCommunity}</span><h2>{t.featured}</h2><p>{t.featuredSub}</p><div className="featured-carousel" role="region" aria-label={t.featured} tabIndex={0} onPointerDown={startCarouselDrag} onPointerMove={moveCarouselDrag} onPointerUp={endCarouselDrag} onPointerCancel={endCarouselDrag} onDragStart={(e) => e.preventDefault()} onClickCapture={(e) => { if (suppressCarouselClick.current) { e.preventDefault(); e.stopPropagation(); } }}>
             {CITIES.map((c) => <figure key={c.slug} className="featured-tile"><Photo src={asset(`/cities/${c.slug}.jpg`)} alt={`Illustrative photograph of ${c.city.EN}`}/><figcaption><span>{c.city[lang]}</span><small>{c.country[lang]}</small></figcaption></figure>)}
             <Link href="/live/moments" className="featured-tile featured-view-all"><span>{t.viewAll}</span><Icon name="arrow" size={22}/></Link>
           </div><ShareExperienceLink label={t.shareExperience}/><button ref={creditsTrigger} type="button" className="credits-link" onClick={() => setCreditsOpen(true)}>{t.photoCredits}</button></section>
+          <PrivateCircle language={lang}/>
         </section>}
 
         {screen === "moments" && <section className="moments-screen">
