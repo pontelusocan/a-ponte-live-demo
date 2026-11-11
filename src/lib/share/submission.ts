@@ -7,7 +7,6 @@ export const CONSENT_VERSION = "staging-2026-11-11-v3";
 
 export type ShareSubmission = {
   photo: CapturedPhoto;
-  name: string;
   description: string;
   publicationConsent: boolean;
   // City and country only: precise coordinates are never part of a submission.
@@ -18,7 +17,6 @@ export type ShareSubmission = {
 export function toUploadFormData(submission: ShareSubmission) {
   const data = new FormData();
   data.append("photo", submission.photo.file, submission.photo.file.name);
-  data.append("name", submission.name);
   data.append("description", submission.description);
   data.append("publicationConsent", String(submission.publicationConsent));
   data.append("language", submission.language);

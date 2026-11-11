@@ -117,12 +117,12 @@ export default function CameraCapture({ text, intro, onIntroDone, onChoose, onCa
     {status === "starting" && <p className="camera-status" role="status">{text.cameraStarting}</p>}
     <button ref={closeButton} type="button" className="capture-close" onClick={onCancel} aria-label={text.closeCamera}><Icon name="x" size={20}/></button>
     {captureFailed && <p className="camera-error" role="alert">{text.captureFailed}</p>}
-    {intro ? <section className="capture-form camera-intro">
+    {intro ? <section className="capture-screen camera-intro"><div className="capture-form capture-centered">
       <h1>{intro.cameraTitle}</h1>
-      <p>{intro.cameraBody}</p>
+      <p className="capture-lede">{intro.cameraBody}</p>
       <button type="button" className="btn btn-white capture-submit" onClick={onIntroDone}>{intro.take}</button>
       <button type="button" className="capture-skip" onClick={onChoose}>{intro.choose}</button>
-    </section> : <div className="camera-controls">
+    </div></section> : <div className="camera-controls">
       {captured
         ? <>
           <button type="button" className="btn btn-outline" onClick={retake}>{text.retake}</button>

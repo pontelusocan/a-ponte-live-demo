@@ -65,16 +65,8 @@
   .circle-strip { scrollbar-width: thin; mask-image: none; }
 }
 .camera-view .camera-video-blurred { filter: blur(14px) brightness(.55); }
-.camera-intro {
-  position: absolute; z-index: 2; inset-inline: 1rem; top: 50%;
-  transform: translateY(-50%); margin: 0 auto; max-width: 24rem;
-  padding: 1.6rem; border: 1px solid #ffffff35; border-radius: 1rem;
-  background: #141113d9; color: #fff; text-align: center;
-}
-.camera-intro h1 { font-size: 1.8rem; }
+.camera-intro { position: absolute; inset: 0; z-index: 2; overflow-y: auto; }
 .circle-camera-fallback { background: radial-gradient(ellipse at top, #301d1b, #100d0e 75%); }
-.camera-intro p { line-height: 1.5; }
-.camera-intro .capture-submit { margin-block: 1rem .3rem; }
 .member-panel { margin: 1.3rem auto; width: min(100%, 27rem); }
 .member-panel h2 { margin-bottom: 0; }
 .member-fields, .member-fields label, .member-actions { display: grid; gap: .55rem; }

@@ -21,7 +21,7 @@ export default function UploadCheck() {
   async function send() {
     if(!file||!token||!consent||busy)return;
     setBusy(true);
-    const data=toUploadFormData({photo:{file,width:2400,height:1600,source:'picker'},name:'A PONTE raw API test',description:'Synthetic raw JPEG with metadata; server-side processing validation.',publicationConsent:false,location:null,language:'EN'});
+    const data=toUploadFormData({photo:{file,width:2400,height:1600,source:'picker'},description:'Synthetic raw JPEG with metadata; server-side processing validation.',publicationConsent:false,location:null,language:'EN'});
     data.append('processingConsent','true');data.append('consentVersion',CONSENT_VERSION);data.append('turnstileToken',token);
     try {
       const response=await fetch('/api/submissions',{method:'POST',headers:{'Idempotency-Key':id},body:data});

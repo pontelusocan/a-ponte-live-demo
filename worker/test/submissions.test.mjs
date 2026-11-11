@@ -124,7 +124,7 @@ test('member verifies, uploads privately, sees the Admin decision and can recove
   assert.equal((await call('photos', undefined, session)).status, 401);
 
   const id = crypto.randomUUID();
-  const upload = () => { const submission = request(id); submission.headers.set('Cookie', session); return submission; };
+  const upload = () => { const submission = request(id, {name: null}); submission.headers.set('Cookie', session); return submission; };
   await rejectsCode(submit(upload(), env, origin, validVerify), 'sign_in_required');
   assert.equal((await call('verify', verify, session)).status, 200);
   assert.equal((await call('verify', verify, session)).status, 400);
@@ -143,7 +143,8 @@ test('member verifies, uploads privately, sees the Admin decision and can recove
   assert.equal((await call('verify', {token: secondVerify}, secondSession)).status, 200);
   assert.deepEqual((await (await call('photos', undefined, secondSession)).json()).photos, []);
   assert.equal((await call('photos/' + id, undefined, secondSession)).status, 404);
-  const differentOwner = request(id);
+  assert.equal(sql.prepare('SELECT display_name FROM submissions WHERE id=?').get(id).display_name, info.username);
+  const differentOwner = request(id, {name: null});
   differentOwner.headers.set('Cookie', secondSession);
   await rejectsCode(submit(differentOwner, env, origin, validVerify), 'idempotency_conflict');
 

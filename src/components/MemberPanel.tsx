@@ -8,7 +8,8 @@ import { clearLink, linkParameters, memberRequest, type Member, type MemberPhoto
 
 const translations = {
   EN: {
-    register: "Create an account", login: "Sign in", username: "Username", email: "Email", password: "Password",
+    register: "Create an account", login: "Log in", username: "Username", email: "Email", password: "Password",
+    accountReason: "Your account keeps track of your contributions and future Private Circle benefits.",
     passwordHelp: "Use at least 12 characters.", relationship: "Your relationship with A PONTE",
     roles: ["Customer", "Partner", "Distributor", "Other"], company: "Company name (optional)",
     verify: "Verify your email", sent: "Open the verification link in your email, then return here.", resend: "Resend email",
@@ -24,6 +25,7 @@ const translations = {
   },
   FR: {
     register: "Créer un compte", login: "Se connecter", username: "Nom d’utilisateur", email: "E-mail", password: "Mot de passe",
+    accountReason: "Votre compte permet de suivre vos contributions et vos futurs avantages du Cercle privé.",
     passwordHelp: "Utilisez au moins 12 caractères.", relationship: "Votre lien avec A PONTE",
     roles: ["Client", "Partenaire", "Distributeur", "Autre"], company: "Entreprise (facultatif)",
     verify: "Vérifiez votre e-mail", sent: "Ouvrez le lien reçu par e-mail, puis revenez ici.", resend: "Renvoyer l’e-mail",
@@ -39,6 +41,7 @@ const translations = {
   },
   PT: {
     register: "Criar conta", login: "Iniciar sessão", username: "Nome de utilizador", email: "Email", password: "Palavra-passe",
+    accountReason: "A sua conta permite acompanhar as suas contribuições e os futuros benefícios do Círculo Privado.",
     passwordHelp: "Use pelo menos 12 caracteres.", relationship: "A sua relação com a A PONTE",
     roles: ["Cliente", "Parceiro", "Distribuidor", "Outro"], company: "Empresa (opcional)",
     verify: "Confirme o seu email", sent: "Abra a ligação que recebeu por email e volte aqui.", resend: "Reenviar email",
@@ -54,7 +57,7 @@ const translations = {
   },
 };
 const roles = ["customer", "partner", "distributor", "other"];
-type Mode = "register" | "login" | "forgot" | "verify" | "reset";
+type Mode = "choice" | "register" | "login" | "forgot" | "verify" | "reset";
 
 async function avatarFrom(file: File) {
   if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) throw new Error("invalid_fields");
@@ -75,7 +78,7 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
 }) {
   const t = translations[language];
   const circle = circleCopy[language];
-  const [mode, setMode] = useState<Mode>(draft ? "register" : "login");
+  const [mode, setMode] = useState<Mode>(onVerified ? "choice" : "login");
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(enabled);
   const [busy, setBusy] = useState(false);
@@ -209,6 +212,11 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
         })}>{t.check}</button>
         <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("resend", {draft}); setNotice(t.sent); })}>{t.resend}</button>
         <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("logout", {}); setMember(null); setMode("login"); })}>{t.logout}</button>
+      </> : mode === "choice" ? <>
+        <h1>{circle.account}</h1>
+        <p className="capture-lede capture-centered">{t.accountReason}</p>
+        <button className={button} onClick={() => setMode("login")}>{t.login}</button>
+        <button className="btn btn-outline capture-submit" onClick={() => setMode("register")}>{t.register}</button>
       </> : <>
         <h1>{mode === "verify" ? t.verify : t[mode]}</h1>
         <form key={mode} className="member-fields" onSubmit={auth}>

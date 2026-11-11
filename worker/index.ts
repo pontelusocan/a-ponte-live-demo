@@ -106,7 +106,8 @@ export async function submit(request: Request, env: Env, origin: string, fetcher
   if (text(data, 'processingConsent', 5) !== 'true' || text(data, 'consentVersion', 80) !== CONSENT_VERSION) throw new ApiError(400, 'consent_required');
   const publication = text(data, 'publicationConsent', 5);
   if (!['true','false'].includes(publication)) throw new ApiError(400, 'consent_required');
-  const name = text(data, 'name', 60, true);
+  const name = text(data, 'name', 60, !member);
+  const displayName = member?.username ?? name;
   const description = text(data, 'description', 300, true);
   const city = text(data, 'city', 100);
   const country = text(data, 'country', 100);
@@ -137,7 +138,7 @@ export async function submit(request: Request, env: Env, origin: string, fetcher
     const ownerValue = member ? ',?' : '';
     await env.DB.prepare(`INSERT INTO submissions(id,request_hash,object_key,created_at,display_name,description,city,country,country_code,language,processing_consent,publication_consent,consent_version,privacy_reference,consent_at,environment,processing_state,expires_at${ownerColumn})
       VALUES(?,?,?,?,?,?,?,?,?,?,1,?,?,?,?, 'staging','receiving',?${ownerValue}) ON CONFLICT(id) DO NOTHING`)
-      .bind(id, hash, key, now.toISOString(), name, description, city, country, countryCode, language, publication === 'true' ? 1 : 0, CONSENT_VERSION, PRIVACY_REFERENCE, now.toISOString(), new Date(now.getTime() + 90 * 86400_000).toISOString(), ...(member ? [member.id] : [])).run();
+      .bind(id, hash, key, now.toISOString(), displayName, description, city, country, countryCode, language, publication === 'true' ? 1 : 0, CONSENT_VERSION, PRIVACY_REFERENCE, now.toISOString(), new Date(now.getTime() + 90 * 86400_000).toISOString(), ...(member ? [member.id] : [])).run();
     row = await env.DB.prepare('SELECT * FROM submissions WHERE id=?').bind(id).first();
     if (!row || row.request_hash !== hash || (row.member_id ?? null) !== (member?.id ?? null)) throw new ApiError(409, 'idempotency_conflict');
     // Only the request that allocated this unpredictable key may write it.
