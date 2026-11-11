@@ -14,7 +14,8 @@
   "vars": {
     "ALLOWED_ORIGINS": "https://aponte-live-api.pontelusocan.workers.dev",
     "UPLOADS_ENABLED": "true",
-    "MEMBERS_ENABLED": "true"
+    "MEMBERS_ENABLED": "true",
+    "TEST_ACCOUNT_DELETION": "true"
   },
   "observability": {"enabled": false},
   "triggers": {"crons": ["17 * * * *"]}

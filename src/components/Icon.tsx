@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 export default function Icon({ name, size = 19, stroke = 1.6 }: { name: string; size?: number; stroke?: number }) {
   const paths: Record<string, ReactNode> = {
     person: <><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></>,
+    eye: <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></>,
+    eyeOff: <><path d="m3 3 18 18M10 6c7-1 12 6 12 6s-1 2-4 4M6 7.5C3.5 9 2 12 2 12s3.5 6 10 6c1.2 0 2.3-.2 3.3-.5"/></>,
     engagement: <><path d="M4 19V5m0 14h16"/><path className="circle-arrow" pathLength={1} d="M8 15l4-4 3 2 5-6m-4 0h4v4"/></>,
     unlock: <><path className="circle-shackle" d="M8 10V7a4 4 0 0 1 8 0v3"/><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M12 14v3"/></>,
     compass: <><circle cx="12" cy="12" r="9"/><path d="m16 8-2.6 5.4L8 16l2.6-5.4L16 8Z"/></>,

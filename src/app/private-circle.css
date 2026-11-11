@@ -86,3 +86,13 @@
 .member-photos li { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); min-height: 3.5rem; gap: .65rem; overflow-wrap: anywhere; }
 .member-photos img { aspect-ratio: 1; border-radius: .35rem; }
 .member-photos small { display: block; color: #dfb683; }
+
+.member-password { position: relative; }
+.capture-form .member-password input:not([type=checkbox]) { padding-inline-end: 48px; }
+.member-password button {
+  position: absolute; inset-inline-end: 0; bottom: 0; width: 44px; height: 45px;
+  display: grid; place-items: center; color: inherit; background: transparent; border: 0;
+}
+.member-strength { display: grid; gap: .3rem; }
+.member-strength meter { width: 100%; }
+.member-fields .member-age { flex-direction: row; align-items: center; min-height: 44px; }

@@ -10,7 +10,10 @@ const translations = {
   EN: {
     register: "Create an account", login: "Log in", username: "Username", email: "Email", password: "Password",
     accountReason: "Your account keeps track of your contributions and future Private Circle benefits.",
-    passwordHelp: "Use at least 12 characters.", relationship: "Your relationship with A PONTE",
+    passwordHelp: "Up to 15 characters.", repeat: "Repeat password", show: "Show password", hide: "Hide password",
+    strength: ["Weak", "Fair", "Strong"], strengthLabel: "Password strength", adult: "I confirm that I am 18 or older.",
+    mismatch: "The passwords don’t match.", ageError: "Confirm that you are 18 or older.", deleteAccount: "Delete test account",
+    confirmDelete: "Delete this test account and its photos? You can reuse the email and username.", deleted: "Test account deleted.", relationship: "Your relationship with A PONTE",
     roles: ["Customer", "Partner", "Distributor", "Other"], company: "Company name (optional)",
     verify: "Verify your email", sent: "Open the verification link in your email, then return here.", resend: "Resend email",
     check: "Check verification", logout: "Sign out", forgot: "Forgot your password?", reset: "Reset password", settings: "Account settings",
@@ -26,7 +29,10 @@ const translations = {
   FR: {
     register: "Créer un compte", login: "Se connecter", username: "Nom d’utilisateur", email: "E-mail", password: "Mot de passe",
     accountReason: "Votre compte permet de suivre vos contributions et vos futurs avantages du Cercle privé.",
-    passwordHelp: "Utilisez au moins 12 caractères.", relationship: "Votre lien avec A PONTE",
+    passwordHelp: "15 caractères maximum.", repeat: "Confirmer le mot de passe", show: "Afficher le mot de passe", hide: "Masquer le mot de passe",
+    strength: ["Faible", "Moyen", "Fort"], strengthLabel: "Solidité du mot de passe", adult: "Je confirme avoir 18 ans ou plus.",
+    mismatch: "Les mots de passe ne correspondent pas.", ageError: "Confirmez que vous avez 18 ans ou plus.", deleteAccount: "Supprimer le compte de test",
+    confirmDelete: "Supprimer ce compte de test et ses photos ? Vous pourrez réutiliser l’e-mail et le nom d’utilisateur.", deleted: "Compte de test supprimé.", relationship: "Votre lien avec A PONTE",
     roles: ["Client", "Partenaire", "Distributeur", "Autre"], company: "Entreprise (facultatif)",
     verify: "Vérifiez votre e-mail", sent: "Ouvrez le lien reçu par e-mail, puis revenez ici.", resend: "Renvoyer l’e-mail",
     check: "Vérifier le statut", logout: "Se déconnecter", forgot: "Mot de passe oublié ?", reset: "Réinitialiser le mot de passe", settings: "Paramètres du compte",
@@ -42,7 +48,10 @@ const translations = {
   PT: {
     register: "Criar conta", login: "Iniciar sessão", username: "Nome de utilizador", email: "Email", password: "Palavra-passe",
     accountReason: "A sua conta permite acompanhar as suas contribuições e os futuros benefícios do Círculo Privado.",
-    passwordHelp: "Use pelo menos 12 caracteres.", relationship: "A sua relação com a A PONTE",
+    passwordHelp: "Até 15 caracteres.", repeat: "Repetir palavra-passe", show: "Mostrar palavra-passe", hide: "Ocultar palavra-passe",
+    strength: ["Fraca", "Razoável", "Forte"], strengthLabel: "Força da palavra-passe", adult: "Confirmo que tenho 18 anos ou mais.",
+    mismatch: "As palavras-passe não coincidem.", ageError: "Confirme que tem 18 anos ou mais.", deleteAccount: "Eliminar conta de teste",
+    confirmDelete: "Eliminar esta conta de teste e as suas fotografias? Pode reutilizar o email e o nome de utilizador.", deleted: "Conta de teste eliminada.", relationship: "A sua relação com a A PONTE",
     roles: ["Cliente", "Parceiro", "Distribuidor", "Outro"], company: "Empresa (opcional)",
     verify: "Confirme o seu email", sent: "Abra a ligação que recebeu por email e volte aqui.", resend: "Reenviar email",
     check: "Verificar estado", logout: "Terminar sessão", forgot: "Esqueceu-se da palavra-passe?", reset: "Redefinir palavra-passe", settings: "Definições da conta",
@@ -58,6 +67,26 @@ const translations = {
 };
 const roles = ["customer", "partner", "distributor", "other"];
 type Mode = "choice" | "register" | "login" | "forgot" | "verify" | "reset";
+
+function passwordStrength(value: string) {
+  const length = Array.from(value).length;
+  if (length < 8 || new Set(value.toLowerCase()).size < 5 || /password|qwerty|12345|senha|palavra/i.test(value)) return 0;
+  return length >= 12 && new Set(value.toLowerCase()).size >= 8 ? 2 : 1;
+}
+
+function PasswordField({label, name, isNew, t, onChange}: {
+  label: string; name: string; isNew: boolean; t: typeof translations[LiveLanguage]; onChange?: (value: string) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  return <div className="member-password">
+    <label>{label}<input type={visible ? "text" : "password"} name={name}
+      autoComplete={isNew ? "new-password" : "current-password"}
+      maxLength={isNew ? 15 : 128} required onChange={event => onChange?.(event.target.value)}/></label>
+    <button type="button" aria-label={visible ? t.hide : t.show} onClick={() => setVisible(!visible)}>
+      <Icon name={visible ? "eyeOff" : "eye"} size={18}/>
+    </button>
+  </div>;
+}
 
 async function avatarFrom(file: File) {
   if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) throw new Error("invalid_fields");
@@ -82,6 +111,8 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(enabled);
   const [busy, setBusy] = useState(false);
+  const [password, setPassword] = useState("");
+  const [repeated, setRepeated] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [verifyLogin, setVerifyLogin] = useState(false);
@@ -128,13 +159,16 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
   async function auth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = Object.fromEntries(new FormData(event.currentTarget));
+    if (mode === "register" || mode === "reset") {
+      if (fields.password !== fields.passwordConfirmation) { setError("password_mismatch"); return; }
+    }
     await run(async () => {
       if (mode === "verify" && (!member || verifyLogin)) {
         const session = await memberRequest<{member: Member}>("login", fields);
         setMember(session.member);
       }
       let response: {member?: Member; mailFailed?: boolean};
-      try { response = await memberRequest(mode, {...fields, language, draft, token}); }
+      try { response = await memberRequest(mode, {...fields, adult: fields.adult === "on", language, draft, token}); }
       catch (failure) {
         if (failure instanceof Error && failure.message === "verify_sign_in") setVerifyLogin(true);
         throw failure;
@@ -171,7 +205,24 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
   const pending = Boolean(member && !member.verified && !token);
   const profile = Boolean(member?.verified && !token);
   const verificationNeedsLogin = mode === "verify" && (!member || verifyLogin);
-  const errorText = t.errors[error as keyof typeof t.errors] ?? t.errors.default;
+  const choosingPassword = mode === "register" || mode === "reset";
+  const score = passwordStrength(password);
+  const errorText = error === "password_mismatch" ? t.mismatch : error === "age_required" ? t.ageError : t.errors[error as keyof typeof t.errors] ?? t.errors.default;
+
+  function removeTestAccount() {
+    if (!window.confirm(t.confirmDelete)) return;
+    void run(async () => {
+      await memberRequest("delete-test-account", {});
+      setMember(null);
+      setPhotos(null);
+      setEditing(false);
+      setSettingsOpen(false);
+      setMode(onVerified ? "choice" : "login");
+      setNotice(t.deleted);
+    });
+  }
+
+  useEffect(() => { setPassword(""); setRepeated(""); }, [mode]);
 
   return <section className="capture-form member-panel">
     {loading ? <p role="status">{t.loading}</p> : !enabled ? <><h1>{circle.account}</h1><p>{t.unavailable}</p></> :
@@ -192,6 +243,7 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
               await memberRequest("forgot", {email: member.email});
               setNotice(t.resetSent);
             })}>{t.reset}</button>
+            <button className="capture-skip" disabled={busy} onClick={removeTestAccount}>{t.deleteAccount}</button>
           </div>}
           {editing ? <form className="member-fields" onSubmit={save}>
             <label>{t.displayName}<input name="displayName" defaultValue={member.displayName} maxLength={60}/></label>
@@ -210,6 +262,7 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
           if (session.member?.verified) onVerified?.();
           else if (session.member) setNotice(t.sent);
         })}>{t.check}</button>
+        <button className="capture-skip" disabled={busy} onClick={removeTestAccount}>{t.deleteAccount}</button>
         <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("resend", {draft}); setNotice(t.sent); })}>{t.resend}</button>
         <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("logout", {}); setMember(null); setMode("login"); })}>{t.logout}</button>
       </> : mode === "choice" ? <>
@@ -222,8 +275,18 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
         <form key={mode} className="member-fields" onSubmit={auth}>
           {mode === "register" && <label>{t.username}<input name="username" autoComplete="username" minLength={3} maxLength={40} required/></label>}
           {((mode !== "verify" && mode !== "reset") || verificationNeedsLogin) && <label>{t.email}<input name="email" type="email" autoComplete="email" maxLength={254} required/></label>}
-          {((mode !== "verify" && mode !== "forgot") || verificationNeedsLogin) && <label>{t.password}<input type="password" name="password" autoComplete={mode === "login" || verificationNeedsLogin ? "current-password" : "new-password"} minLength={mode === "login" || verificationNeedsLogin ? undefined : 12} maxLength={128} required/>{mode !== "login" && !verificationNeedsLogin && <small>{t.passwordHelp}</small>}</label>}
+          {((mode !== "verify" && mode !== "forgot") || verificationNeedsLogin) && <PasswordField label={t.password} name="password" t={t} isNew={choosingPassword} onChange={choosingPassword ? setPassword : undefined}/>}
+          {choosingPassword && <>
+            <small>{t.passwordHelp}</small>
+            {password && <div className="member-strength">
+              <meter aria-label={t.strengthLabel} min={0} max={3} value={score + 1}/>
+              <small>{t.strengthLabel} · {t.strength[score]}</small>
+            </div>}
+            <PasswordField label={t.repeat} name="passwordConfirmation" t={t} isNew onChange={setRepeated}/>
+            {repeated && password !== repeated && <small className="capture-error">{t.mismatch}</small>}
+          </>}
           {mode === "register" && <>
+            <label className="member-age"><input type="checkbox" name="adult" required/>{t.adult}</label>
             <label>{t.relationship}<select name="relationship" defaultValue="customer">{roles.map((role, i) => <option key={role} value={role}>{t.roles[i]}</option>)}</select></label>
             <label>{t.company}<input name="company" autoComplete="organization" maxLength={100}/></label>
           </>}

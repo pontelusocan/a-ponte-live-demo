@@ -15,6 +15,7 @@ export type Env = {
   REVIEW_DB: Env['DB'];
   MEMBER_LIMITER: Env['UPLOAD_LIMITER'];
   MEMBERS_ENABLED?: string;
+  TEST_ACCOUNT_DELETION?: string;
   RESEND_API_KEY?: string;
   MEMBER_EMAIL_FROM?: string;
   PHOTOS: {

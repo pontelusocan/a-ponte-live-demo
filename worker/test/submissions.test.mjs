@@ -14,6 +14,7 @@ function setup() {
   const sql = new DatabaseSync(':memory:');
   sql.exec(readFileSync(new URL('../migrations/0001_submissions.sql', import.meta.url),'utf8'));
   sql.exec(readFileSync(new URL('../migrations/0002_members.sql', import.meta.url),'utf8'));
+  sql.exec(readFileSync(new URL('../migrations/0003_member_age_confirmation.sql', import.meta.url),'utf8'));
   sql.exec('CREATE TABLE photo_reviews(submission_id TEXT PRIMARY KEY, decision TEXT NOT NULL)');
   const objects = new Map();
   const state = {failComplete:false,failPut:false,failDelete:false,transformations:0};
@@ -108,7 +109,10 @@ test('member verifies, uploads privately, sees the Admin decision and can recove
       body: data && JSON.stringify(data),
     }), env);
   }
-  const info = {email: 'member@example.com', password: 'test-password-original', username: 'Joao', relationship: 'customer', language: 'PT', draft: crypto.randomUUID()};
+  const info = {email: 'member@example.com', password: 'test-password1', passwordConfirmation: 'test-password1', adult: true, username: 'Joao', relationship: 'customer', language: 'PT', draft: crypto.randomUUID()};
+  assert.equal((await call('register', {...info, adult: false})).status, 400);
+  assert.equal((await call('register', {...info, passwordConfirmation: 'different'})).status, 400);
+  assert.equal((await call('register', {...info, password: '1234567890123456', passwordConfirmation: '1234567890123456'})).status, 400);
   const registration = await call('register', info);
   assert.equal(registration.status, 200);
   const session = registration.headers.get('set-cookie').split(';')[0];
@@ -150,10 +154,18 @@ test('member verifies, uploads privately, sees the Admin decision and can recove
 
   assert.equal((await call('forgot', {email: info.email})).status, 200);
   const token = new URLSearchParams(links[2].hash.slice(1)).get('reset');
-  const password = 'new-test-password';
-  assert.equal((await call('reset', {token, password})).status, 200);
-  assert.equal((await call('reset', {token, password})).status, 400);
+  const password = 'new-password1';
+  assert.equal((await call('reset', {token, password, passwordConfirmation: password})).status, 200);
+  assert.equal((await call('reset', {token, password, passwordConfirmation: password})).status, 400);
   assert.equal((await (await call('session', undefined, session)).json()).member, null);
   assert.equal((await call('login', info)).status, 401);
-  assert.equal((await call('login', {...info, password})).status, 200);
+  const login = await call('login', {...info, password});
+  assert.equal(login.status, 200);
+  const newSession = login.headers.get('set-cookie').split(';')[0];
+  assert.equal((await call('delete-test-account', {}, newSession)).status, 404);
+  env.TEST_ACCOUNT_DELETION = 'true';
+  assert.equal((await call('delete-test-account', {}, newSession)).status, 200);
+  assert.equal((await (await call('session', undefined, newSession)).json()).member, null);
+  assert.equal(sql.prepare('SELECT processing_state FROM submissions WHERE id=?').get(id).processing_state, 'deleting');
+  assert.equal((await call('register', info)).status, 200);
 });

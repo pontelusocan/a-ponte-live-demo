@@ -132,22 +132,37 @@ export async function memberApi(request: Request, env: Env, path: string, origin
   try { data = JSON.parse(new TextDecoder().decode(await boundedBody(request.body, 100_000))); }
   catch { throw new ApiError(400, "invalid_fields"); }
   if (!data || typeof data !== "object" || Array.isArray(data)) throw new ApiError(400, "invalid_fields");
+  if (path === "delete-test-account") {
+    if (env.TEST_ACCOUNT_DELETION !== "true") throw new ApiError(404, "not_found");
+    if (!member) throw new ApiError(401, "sign_in_required");
+    await env.DB.batch([
+      env.DB.prepare("UPDATE submissions SET member_id=NULL, display_name='', processing_state='deleting', expires_at=? WHERE member_id=?")
+        .bind(new Date(Date.now() + 3600_000).toISOString(), member.id),
+      env.DB.prepare("DELETE FROM members WHERE id=?").bind(member.id),
+    ]);
+    return reply({ok: true}, "");
+  }
   const email = field(data, "email", 254).trim().toLowerCase();
   const password = field(data, "password", 128);
   const draft = field(data, "draft", 36);
   if (draft && !/^[a-f0-9-]{36}$/.test(draft)) throw new ApiError(400, "invalid_fields");
 
+  if (path === "register" || path === "reset") {
+    if (!password.length || Array.from(password).length > 15) throw new ApiError(400, "invalid_fields");
+    if (password !== field(data, "passwordConfirmation", 128)) throw new ApiError(400, "password_mismatch");
+  }
   if (path === "register") {
+    if (data.adult !== true) throw new ApiError(400, "age_required");
     requireMail(env);
     const username = field(data, "username", 40).trim();
     const relationship = field(data, "relationship", 20);
     const company = field(data, "company", 100).trim();
     const language = field(data, "language", 2);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^[\p{L}\p{N}_.-]{3,40}$/u.test(username) || password.length < 12 ||
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^[\p{L}\p{N}_.-]{3,40}$/u.test(username) ||
       !["customer", "partner", "distributor", "other"].includes(relationship) || !["EN", "FR", "PT"].includes(language)) throw new ApiError(400, "invalid_fields");
     const created: Member = {id: crypto.randomUUID(), email, username, password_hash: await passwordHash(password), relationship, company, display_name: "", avatar: "", verified: 0, language};
-    const result = await env.DB.prepare("INSERT INTO members(id,email,username,password_hash,relationship,company,language,created_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING")
-      .bind(created.id, email, username, created.password_hash, relationship, company, language, new Date().toISOString()).run();
+    const result = await env.DB.prepare("INSERT INTO members(id,email,username,password_hash,relationship,company,language,created_at,adult_confirmed_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING")
+      .bind(created.id, email, username, created.password_hash, relationship, company, language, new Date().toISOString(), new Date().toISOString()).run();
     if (!result.meta.changes) throw new ApiError(409, "account_exists");
     const response = await signIn(env, created);
     try { await sendLink(env, created, "verify", origin, draft); }
@@ -174,7 +189,7 @@ export async function memberApi(request: Request, env: Env, path: string, origin
   }
   if (path === "verify" || path === "reset") {
     const token = field(data, "token", 64);
-    if (!tokenPattern.test(token) || (path === "reset" && password.length < 12)) throw new ApiError(400, "invalid_fields");
+    if (!tokenPattern.test(token)) throw new ApiError(400, "invalid_fields");
     const hash = await sha256(token);
     const link = await env.DB.prepare("SELECT member_id FROM member_links WHERE token_hash=? AND purpose=? AND expires_at>?")
       .bind(hash, path, Date.now()).first<{member_id: string}>();
