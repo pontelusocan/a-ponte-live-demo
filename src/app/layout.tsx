@@ -4,6 +4,7 @@ import { barlow } from "@/lib/fonts";
 import "./globals.css";
 import "./brand.css";
 import "./cinematic.css";
+import "./private-circle.css";
 
 export const metadata: Metadata = {
   title: "A PONTE LIVE — Interactive Experience Concept",

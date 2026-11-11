@@ -8,12 +8,16 @@ import LocationStep from "@/components/share/LocationStep";
 import { type CameraErrorKind, canUseCamera, consumeCameraRequest, requestCameraOnArrival } from "@/lib/share/camera";
 import type { ShareLocation } from "@/lib/share/location";
 import { type CapturedPhoto, photoFromFile, useObjectUrl } from "@/lib/share/photo";
-import { SUBMISSION_BACKEND_CONNECTED, type ShareSubmission } from "@/lib/share/submission";
+import { STAGING_UPLOADS, uploadSubmission, type ShareSubmission } from "@/lib/share/submission";
+import UploadVerification from "@/components/share/UploadVerification";
+import {uploadCopy} from "@/lib/share/upload-copy";
 
-type Screen = "live" | "moments" | "share";
-// Share flow: take or choose a photo, optional location, review the photo, optional
-// free-bottle invitation, thank-you.
-type ShareStage = "start" | "camera" | "location" | "review" | "email" | "thankYou";
+import PrivateCircle, {circleCopy} from "@/components/PrivateCircle";
+import MemberPanel from "@/components/MemberPanel";
+import {linkParameters, loadDraft, memberRequest, removeDraft, saveDraft, type Member} from "@/lib/share/member-client";
+
+type Screen = "live" | "moments" | "share" | "account";
+type ShareStage = "start" | "camera" | "location" | "review" | "account" | "thankYou";
 type Language = "EN" | "FR" | "PT";
 // The A PONTE markets, in the institutional site's order (src/data/countries.ts), as
 // ISO 3166-1 alpha-2 codes. Any other country code is grouped under "Other".
@@ -57,7 +61,6 @@ type Moment = {
 const COMPANY_URL = "https://pontelusocan.com/";
 // Files in public/ live under the GitHub Pages project path when built for it (next.config.ts).
 const asset = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH}${path}`;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Same order, labels and flag-icons classes as the institutional site's Navbar.tsx.
 const LANGUAGES: { code: Language; label: string; flagClass: string }[] = [
@@ -147,25 +150,31 @@ const HERO_TEXT_FADE_MS = 420;
 const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const SLIDES = [
-  { title: "One bottle. A world of stories.", body: "Discover the moments people share around A PONTE — from Portugal to the world." },
-  { title: "Your moment deserves a place here.", body: "Take a photo featuring your A PONTE bottle and share the moment with our community." },
+  { title: "Discover the A PONTE Private Circle.", body: "Share your moments and discover a closer connection with A PONTE." },
+  { title: "More moments. More possibilities.", body: "Discover exclusive experiences and privileges as your connection with A PONTE grows." },
+  { title: "One bottle. A world of stories.", body: "Discover the moments our members share around A PONTE — from Portugal to the world." },
+  { title: "Your moment deserves a place here.", body: "Take a photo featuring your A PONTE bottle, share the moment and become part of our community." },
 ];
 
 const SLIDE_COPY: Record<Language, { title: string; body: string }[]> = {
   EN: SLIDES.map(({ title, body }) => ({ title, body })),
   FR: [
-    { title: "Une bouteille. Un monde d'histoires.", body: "Découvrez les moments partagés autour d'A PONTE, du Portugal au monde entier." },
-    { title: "Votre moment a sa place ici.", body: "Prenez une photo avec votre bouteille A PONTE et partagez ce moment avec notre communauté." },
+    { title: "Découvrez le Cercle privé A PONTE.", body: "Partagez vos moments et tissez des liens plus étroits avec A PONTE." },
+    { title: "Plus de moments. Plus de possibilités.", body: "Découvrez des expériences et des privilèges exclusifs à mesure que votre lien avec A PONTE grandit." },
+    { title: "Une bouteille. Un monde d'histoires.", body: "Découvrez les moments que nos membres partagent autour d’A PONTE, du Portugal au monde entier." },
+    { title: "Votre moment a sa place ici.", body: "Prenez une photo avec votre bouteille A PONTE partagez ce moment et rejoignez notre communauté." },
   ],
   PT: [
-    { title: "Uma garrafa. Um mundo de histórias.", body: "Descubra os momentos partilhados à volta da A PONTE, de Portugal para o mundo." },
-    { title: "O seu momento merece estar aqui.", body: "Tire uma fotografia com a sua garrafa A PONTE e partilhe esse momento com a nossa comunidade." },
+    { title: "Descubra o Círculo Privado A PONTE.", body: "Partilhe os seus momentos e aproxime-se da A PONTE." },
+    { title: "Mais momentos. Mais possibilidades.", body: "Descubra experiências e privilégios exclusivos à medida que se aproxima da A PONTE." },
+    { title: "Uma garrafa. Um mundo de histórias.", body: "Descubra os momentos que os nossos membros partilham à volta da A PONTE, de Portugal para o mundo." },
+    { title: "O seu momento merece estar aqui.", body: "Tire uma fotografia com a sua garrafa A PONTE partilhe esse momento e faça parte da nossa comunidade." },
   ],
 };
 
 const strings = {
   EN: {
-    permissionRequired: "Please accept the publication permission before continuing. We need your permission to display your photograph in the A PONTE gallery and potentially share it on our social media.", backToDiscover: "Back to Discover", bottleTitle: "Would you like to win a free bottle?", bottleBody: "Do you want to win a free bottle? Tell us your email so we can send you the code!", emailLabel: "Your email", emailPlaceholder: "you@example.com", emailRequired: "Please enter your email address.", emailInvalid: "Please enter a valid email address, e.g. you@example.com.", getCode: "Get My Code", noThanks: "No thanks", thanksTitle: "Thank you for sharing your experience with us!", checkInbox: "Check your inbox!", emailDemoNote: "Preview only: your photo stayed on this device. Nothing was uploaded or submitted for review, no email was sent and no code was generated.", shareDemoNote: "Preview only: your photo stayed on this device. Nothing was uploaded, stored or submitted for review.", visitWebsite: "Visit Website",
+    permissionRequired: "Please accept the publication permission before continuing. We need your permission to display your photograph in the A PONTE gallery and potentially share it on our social media.", backToDiscover: "Back to Discover", thanksTitle: "Thank you for sharing your experience with us!", shareDemoNote: "Preview only: your photo stayed on this device. Nothing was uploaded, stored or submitted for review.", visitWebsite: "Visit Website",
     captureTitle: "Share your experience", description: "Short description", descriptionPlaceholder: "Tell us about this moment...", permission: "I allow pontelusocan to use this photo in the discovery gallery and their social media in case it gets approved.", submitReview: "Submit for Review", 
     website: "Visit website", 
     galleryOutro1: "Every moment tells a story.", galleryOutro2: "What will yours be?", 
@@ -173,7 +182,7 @@ const strings = {
     startLede: "Take a photo of your moment with your A PONTE bottle.", openCamera: "Open Camera", nativeCamera: "Use my phone's camera", choosePhoto: "Choose from my photos", keepPhoto: "Keep my current photo", retakePhoto: "Retake photo", cameraLabel: "Camera", cameraStarting: "Starting camera…", capturePhoto: "Take photo", retake: "Retake", usePhoto: "Use photo", closeCamera: "Close camera", capturedAlt: "Your photo", cameraDenied: "Camera access was blocked. You can allow it in your browser settings, or use your phone's camera or a saved photo instead.", cameraUnsupported: "This browser can't open the camera here. Use your phone's camera or choose a saved photo instead.", cameraUnavailable: "No camera was found on this device. Choose a saved photo instead.", cameraBusy: "The camera is being used by another app. Close it and try again, or choose a saved photo.", cameraFailed: "The camera couldn't be started. Try again, or choose a saved photo.", captureFailed: "The photo couldn't be taken. Please try again.", photoUnreadable: "This photo couldn't be opened. Please choose a JPEG or PNG image.",
     locationTitle: "Where was this moment?", locationLede: "Adding your city and country is optional. It helps place your moment in the gallery.", detectLocation: "Detect my location", locationDisclosure: "Your browser will ask for permission. Your approximate position is then sent to {provider}, an external service, only to look up your city and country. Your coordinates are not saved or shown.", locating: "Finding your location…", locationFound: "Location found. You can correct it below.", locationDenied: "Location access was declined. You can type your city and country instead.", locationTimeout: "Finding your location took too long. Try again or type it below.", locationUnavailable: "Your location isn't available right now. You can type it below.", locationUnsupported: "This browser can't share your location. You can type it below.", lookupFailed: "We couldn't find a city for your position. You can type it below.", city: "City", cityPlaceholder: "e.g. Lisbon", countryLabel: "Country", chooseCountry: "Choose a country", otherCountry: "Other country", otherCountryName: "Country name", continue: "Continue", skipLocation: "Skip", addLocation: "Add location" },
   FR: {
-    permissionRequired: "Veuillez accepter l'autorisation de publication avant de continuer. Nous avons besoin de votre autorisation pour afficher votre photo dans la galerie A PONTE et éventuellement la partager sur nos réseaux sociaux.", backToDiscover: "Retour à Découvrir", bottleTitle: "Envie de gagner une bouteille offerte ?", bottleBody: "Vous voulez gagner une bouteille offerte ? Indiquez-nous votre e-mail pour que nous puissions vous envoyer le code !", emailLabel: "Votre e-mail", emailPlaceholder: "vous@exemple.com", emailRequired: "Veuillez indiquer votre adresse e-mail.", emailInvalid: "Veuillez indiquer une adresse e-mail valide, par ex. vous@exemple.com.", getCode: "Recevoir mon code", noThanks: "Non merci", thanksTitle: "Merci d'avoir partagé votre expérience avec nous !", checkInbox: "Consultez votre boîte de réception !", emailDemoNote: "Aperçu uniquement : votre photo est restée sur cet appareil. Rien n'a été téléversé ni envoyé pour validation, aucun e-mail n'a été envoyé et aucun code n'a été généré.", shareDemoNote: "Aperçu uniquement : votre photo est restée sur cet appareil. Rien n'a été téléversé, enregistré ni envoyé pour validation.", visitWebsite: "Visiter le site",
+    permissionRequired: "Veuillez accepter l'autorisation de publication avant de continuer. Nous avons besoin de votre autorisation pour afficher votre photo dans la galerie A PONTE et éventuellement la partager sur nos réseaux sociaux.", backToDiscover: "Retour à Découvrir", thanksTitle: "Merci d'avoir partagé votre expérience avec nous !", shareDemoNote: "Aperçu uniquement : votre photo est restée sur cet appareil. Rien n'a été téléversé, enregistré ni envoyé pour validation.", visitWebsite: "Visiter le site",
     captureTitle: "Partagez votre expérience", description: "Courte description", descriptionPlaceholder: "Parlez-nous de ce moment...", permission: "J'autorise pontelusocan à utiliser cette photo dans la galerie découverte et sur ses réseaux sociaux si elle est approuvée.", submitReview: "Envoyer pour validation", 
     website: "Visiter le site", 
     galleryOutro1: "Chaque moment a une histoire.", galleryOutro2: "Quelle sera la vôtre ?", 
@@ -181,7 +190,7 @@ const strings = {
     startLede: "Prenez une photo de votre moment avec votre bouteille A PONTE.", openCamera: "Ouvrir l'appareil photo", nativeCamera: "Utiliser l'appareil photo du téléphone", choosePhoto: "Choisir dans mes photos", keepPhoto: "Garder ma photo actuelle", retakePhoto: "Reprendre la photo", cameraLabel: "Appareil photo", cameraStarting: "Ouverture de l'appareil photo…", capturePhoto: "Prendre la photo", retake: "Reprendre", usePhoto: "Utiliser la photo", closeCamera: "Fermer l'appareil photo", capturedAlt: "Votre photo", cameraDenied: "L'accès à l'appareil photo a été bloqué. Vous pouvez l'autoriser dans les réglages de votre navigateur, ou utiliser l'appareil photo de votre téléphone ou une photo enregistrée.", cameraUnsupported: "Ce navigateur ne peut pas ouvrir l'appareil photo ici. Utilisez l'appareil photo de votre téléphone ou choisissez une photo enregistrée.", cameraUnavailable: "Aucun appareil photo n'a été trouvé sur cet appareil. Choisissez plutôt une photo enregistrée.", cameraBusy: "L'appareil photo est utilisé par une autre application. Fermez-la et réessayez, ou choisissez une photo enregistrée.", cameraFailed: "Impossible de démarrer l'appareil photo. Réessayez ou choisissez une photo enregistrée.", captureFailed: "La photo n'a pas pu être prise. Veuillez réessayer.", photoUnreadable: "Cette photo n'a pas pu être ouverte. Choisissez une image JPEG ou PNG.",
     locationTitle: "Où ce moment a-t-il eu lieu ?", locationLede: "Indiquer votre ville et votre pays est facultatif. Cela permet de situer votre moment dans la galerie.", detectLocation: "Détecter ma position", locationDisclosure: "Votre navigateur vous demandera l'autorisation. Votre position approximative est ensuite envoyée à {provider}, un service externe, uniquement pour trouver votre ville et votre pays. Vos coordonnées ne sont ni enregistrées ni affichées.", locating: "Recherche de votre position…", locationFound: "Position trouvée. Vous pouvez la corriger ci-dessous.", locationDenied: "L'accès à la position a été refusé. Vous pouvez saisir votre ville et votre pays.", locationTimeout: "La recherche de votre position a pris trop de temps. Réessayez ou saisissez-la ci-dessous.", locationUnavailable: "Votre position n'est pas disponible pour le moment. Vous pouvez la saisir ci-dessous.", locationUnsupported: "Ce navigateur ne peut pas partager votre position. Vous pouvez la saisir ci-dessous.", lookupFailed: "Nous n'avons pas trouvé de ville pour votre position. Vous pouvez la saisir ci-dessous.", city: "Ville", cityPlaceholder: "ex. Lisbonne", countryLabel: "Pays", chooseCountry: "Choisir un pays", otherCountry: "Autre pays", otherCountryName: "Nom du pays", continue: "Continuer", skipLocation: "Passer", addLocation: "Ajouter un lieu" },
   PT: {
-    permissionRequired: "Aceite a autorização de publicação antes de continuar. Precisamos da sua autorização para mostrar a sua fotografia na galeria A PONTE e, eventualmente, partilhá-la nas nossas redes sociais.", backToDiscover: "Voltar a Descobrir", bottleTitle: "Quer ganhar uma garrafa grátis?", bottleBody: "Quer ganhar uma garrafa grátis? Diga-nos o seu email para lhe enviarmos o código!", emailLabel: "O seu email", emailPlaceholder: "o.seu@exemplo.com", emailRequired: "Indique o seu endereço de email.", emailInvalid: "Indique um endereço de email válido, por ex. o.seu@exemplo.com.", getCode: "Receber o meu código", noThanks: "Não, obrigado", thanksTitle: "Obrigado por partilhar a sua experiência connosco!", checkInbox: "Verifique a sua caixa de entrada!", emailDemoNote: "Apenas pré-visualização: a sua fotografia ficou neste dispositivo. Nada foi carregado nem enviado para revisão, nenhum email foi enviado e nenhum código foi gerado.", shareDemoNote: "Apenas pré-visualização: a sua fotografia ficou neste dispositivo. Nada foi carregado, guardado nem enviado para revisão.", visitWebsite: "Visitar o site",
+    permissionRequired: "Aceite a autorização de publicação antes de continuar. Precisamos da sua autorização para mostrar a sua fotografia na galeria A PONTE e, eventualmente, partilhá-la nas nossas redes sociais.", backToDiscover: "Voltar a Descobrir", thanksTitle: "Obrigado por partilhar a sua experiência connosco!", shareDemoNote: "Apenas pré-visualização: a sua fotografia ficou neste dispositivo. Nada foi carregado, guardado nem enviado para revisão.", visitWebsite: "Visitar o site",
     captureTitle: "Partilhe a sua experiência", description: "Breve descrição", descriptionPlaceholder: "Fale-nos deste momento...", permission: "Autorizo a pontelusocan a utilizar esta fotografia na galeria de descoberta e nas suas redes sociais, caso seja aprovada.", submitReview: "Enviar para revisão", 
     website: "Visitar o site", 
     galleryOutro1: "Cada momento conta uma história.", galleryOutro2: "Qual será a sua?", 
@@ -230,11 +239,12 @@ function ShareExperienceLink({ label }: { label: string }) {
   return <Link href="/live/share" className="btn btn-white share-experience" onClick={requestCameraOnArrival}><Icon name="camera" size={16}/>{label}</Link>;
 }
 
-function Nav({ current, text }: { current: Screen; text: typeof strings.EN }) {
+function Nav({ current, text, account }: { current: Screen; text: typeof strings.EN; account: string }) {
   return <nav className="bottom-nav" aria-label="A PONTE Live navigation">
     <Link href="/live" className={`nav-link ${current === "live" ? "active" : ""}`} aria-current={current === "live" ? "page" : undefined}><Icon name="compass" size={20}/><span>{text.discover}</span></Link>
     <Link href="/live/moments" className={`nav-link ${current === "moments" ? "active" : ""}`} aria-current={current === "moments" ? "page" : undefined}><Icon name="images" size={20}/><span>{text.moments}</span></Link>
     <Link href="/live/share" className={`nav-link ${current === "share" ? "active" : ""}`} aria-current={current === "share" ? "page" : undefined} onClick={requestCameraOnArrival}><Icon name="plus" size={20}/><span>{text.shareNav}</span></Link>
+    <Link href="/live/account" className={`nav-link ${current === "account" ? "active" : ""}`} aria-current={current === "account" ? "page" : undefined}><Icon name="person" size={20}/><span>{account}</span></Link>
   </nav>;
 }
 
@@ -258,16 +268,25 @@ export default function Experience({ screen }: { screen: Screen }) {
   const [photoError, setPhotoError] = useState(false);
   const [location, setLocation] = useState<ShareLocation | null>(null);
   const locationAnswered = useRef(false);
-  // No backend yet: the prepared submission stays in memory and is never sent (lib/share/submission.ts).
   const submission = useRef<ShareSubmission | null>(null);
   const nativeCameraInput = useRef<HTMLInputElement>(null);
   const photoLibraryInput = useRef<HTMLInputElement>(null);
-  const [emailChoice, setEmailChoice] = useState<"provided" | "declined">("declined");
+  const [draftId, setDraftId] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
+  const [cameraFallback, setCameraFallback] = useState(false);
+  const [introSeen, setIntroSeen] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [processingConsent, setProcessingConsent] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const uploadLock = useRef(false);
+  const [uploadError, setUploadError] = useState<"" | "failed" | "fileError" | "waitError" | "unavailable">("");
+  const [verificationToken, setVerificationToken] = useState("");
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
+  const [receipt, setReceipt] = useState("");
+  // Reuse the id on retries, but allocate another if any submitted content changes.
+  const uploadIdentity = useRef<{signature: string; photo: File; id: string} | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState<"" | "required" | "invalid">("");
   const stageRef = useRef<HTMLDivElement>(null);
   const stageChanged = useRef(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
@@ -275,6 +294,35 @@ export default function Experience({ screen }: { screen: Screen }) {
   const carouselDrag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
   const suppressCarouselClick = useRef(false);
   const t = strings[lang];
+  const u = uploadCopy[lang];
+  const circle = circleCopy[lang];
+
+  useEffect(() => {
+    if (screen !== "share" || !STAGING_UPLOADS) return;
+    let active = true;
+    const params = linkParameters();
+    if (params.has("verify")) {
+      setStage("account");
+      const id = params.get("draft");
+      if (id) void loadDraft(id).then(draft => {
+        if (!active || !draft) return;
+        const saved = draft.submission;
+        setPhoto(saved.photo);
+        setName(saved.name);
+        setDescription(saved.description);
+        setLocation(saved.location ? {...saved.location, source: "manual"} : null);
+        locationAnswered.current = true;
+        setProcessingConsent(true);
+        setConsent(saved.publicationConsent);
+        setDraftId(draft.id);
+        uploadIdentity.current = {id: draft.id, photo: saved.photo.file, signature: JSON.stringify({name: saved.name, description: saved.description, location: saved.location, lang: saved.language, consent: saved.publicationConsent})};
+      }).catch(() => { if (active) setUploadError("failed"); });
+    }
+    void memberRequest<{member: Member | null}>("session").then(result => {
+      if (active) setSignedIn(Boolean(result.member?.verified));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [screen]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("aponte-live-demo-lang");
@@ -321,7 +369,7 @@ export default function Experience({ screen }: { screen: Screen }) {
   useEffect(() => {
     if (screen !== "share") return;
     if (!canUseCamera()) setCameraError("unsupported");
-    else if (consumeCameraRequest()) setStage("camera");
+    else if (!linkParameters().has("verify") && consumeCameraRequest()) setStage("camera");
   }, [screen]);
 
   // Each new share stage starts at the top, with focus on its heading.
@@ -413,12 +461,15 @@ export default function Experience({ screen }: { screen: Screen }) {
 
   function handleCameraError(kind: CameraErrorKind) {
     setCameraError(kind);
+    setCameraFallback(!introSeen);
+    setIntroSeen(true);
     stageChanged.current = true;
     setStage("start");
   }
 
   function acceptPhoto(next: CapturedPhoto) {
     setPhoto(next);
+    setIntroSeen(true);
     setPhotoError(false);
     // A retake goes back to the form; the location question is only asked once.
     goToStage(locationAnswered.current ? "review" : "location");
@@ -446,32 +497,58 @@ export default function Experience({ screen }: { screen: Screen }) {
     goToStage("review");
   }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (uploadLock.current) return;
     if (!photo) { goToStage("start"); return; }
-    if (!consent) { setFormError(true); return; }
+    if (STAGING_UPLOADS ? (!processingConsent || !name.trim() || !description.trim() || (signedIn && !verificationToken)) : !consent) { setFormError(true); return; }
     setFormError(false);
     submission.current = {
       photo,
       name: name.trim(),
       description: description.trim(),
-      publicationConsent: true,
+      publicationConsent: consent,
       location: location && { city: location.city, countryCode: location.countryCode, country: location.country },
-      email: null,
       language: lang,
     };
-    goToStage("email");
-  }
-
-  function handleEmail(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const value = email.trim();
-    if (!value) { setEmailError("required"); return; }
-    if (!EMAIL_PATTERN.test(value)) { setEmailError("invalid"); return; }
-    setEmailError("");
-    setEmailChoice("provided");
-    if (submission.current) submission.current.email = value;
-    goToStage("thankYou");
+    if (STAGING_UPLOADS) {
+      uploadLock.current = true;
+      setUploading(true);
+      setUploadError("");
+      const signature = JSON.stringify({name: name.trim(), description: description.trim(), location, lang, consent});
+      if (uploadIdentity.current?.signature !== signature || uploadIdentity.current.photo !== photo.file) {
+        uploadIdentity.current = {signature, photo: photo.file, id: crypto.randomUUID()};
+      }
+      try {
+        const session = await memberRequest<{member: Member | null}>("session");
+        setSignedIn(Boolean(session.member?.verified));
+        if (!session.member?.verified) {
+          const id = uploadIdentity.current.id;
+          await saveDraft({id, submission: submission.current, expires: Date.now() + 86400_000});
+          setDraftId(id);
+          goToStage("account");
+          return;
+        }
+        if (!verificationToken) { setFormError(true); return; }
+        const result = await uploadSubmission(submission.current, uploadIdentity.current.id, verificationToken);
+        setReceipt(result.id);
+        if (draftId) void removeDraft(draftId).catch(() => {});
+        goToStage("thankYou");
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "";
+        setUploadError(["invalid_image", "image_dimensions", "image_processing", "image_too_large"].includes(code) ? "fileError"
+          : ["rate_limited", "processing_retry"].includes(code) ? "waitError"
+          : ["staging_limit", "uploads_unavailable"].includes(code) ? "unavailable" : "failed");
+      }
+      finally {
+        uploadLock.current = false;
+        setUploading(false);
+        setVerificationToken("");
+        setVerificationAttempt(n => n + 1);
+      }
+      return;
+    }
+    goToStage("account");
   }
 
   const shownMoments = MOMENTS.filter((moment) => matchesFilter(moment.countryCode, country));
@@ -506,6 +583,7 @@ export default function Experience({ screen }: { screen: Screen }) {
             <div className="hero-content"><div key={heroText.index} className={`hero-copy ${heroText.entering ? "is-entering" : ""} ${heroText.leaving ? "is-leaving" : ""}`}><h1>{SLIDE_COPY[lang][heroText.index].title}</h1><p>{SLIDE_COPY[lang][heroText.index].body}</p></div></div>
             <div className="slide-controls"><div className="slide-arrows"><button type="button" aria-label="Previous photo" onClick={() => showPhoto(-1)}><Icon name="left"/></button><button type="button" aria-label="Next photo" onClick={() => showPhoto(1)}><Icon name="right"/></button></div></div>
           </div>
+          <PrivateCircle language={lang}/>
           <section className="featured-section"><span className="eyebrow gold-text">{t.fromCommunity}</span><h2>{t.featured}</h2><p>{t.featuredSub}</p><div className="featured-carousel" role="region" aria-label={t.featured} tabIndex={0} onPointerDown={startCarouselDrag} onPointerMove={moveCarouselDrag} onPointerUp={endCarouselDrag} onPointerCancel={endCarouselDrag} onDragStart={(e) => e.preventDefault()} onClickCapture={(e) => { if (suppressCarouselClick.current) { e.preventDefault(); e.stopPropagation(); } }}>
             {CITIES.map((c) => <figure key={c.slug} className="featured-tile"><Photo src={asset(`/cities/${c.slug}.jpg`)} alt={`Illustrative photograph of ${c.city.EN}`}/><figcaption><span>{c.city[lang]}</span><small>{c.country[lang]}</small></figcaption></figure>)}
             <Link href="/live/moments" className="featured-tile featured-view-all"><span>{t.viewAll}</span><Icon name="arrow" size={22}/></Link>
@@ -519,11 +597,13 @@ export default function Experience({ screen }: { screen: Screen }) {
           <div className="gallery-outro"><p>{t.galleryOutro1}<br/><em>{t.galleryOutro2}</em></p><ShareExperienceLink label={t.shareExperience}/></div>
         </section>}
 
-        {screen === "share" && <section className="capture-screen">
+        {screen === "account" && <section className="capture-screen"><MemberPanel language={lang} enabled={STAGING_UPLOADS}/></section>}
+
+        {screen === "share" && <section className={`capture-screen ${stage === "start" && cameraFallback ? "circle-camera-fallback" : ""}`}>
           <div key={stage} ref={stageRef} className={`capture-stage ${leavingStage ? "leaving" : ""}`}>
             {stage === "start" && <div className="capture-form capture-centered">
-              <h1 tabIndex={-1}>{t.captureTitle}</h1>
-              <p className="capture-lede">{t.startLede}</p>
+              <h1 tabIndex={-1}>{cameraFallback ? circle.cameraTitle : t.captureTitle}</h1>
+              <p className="capture-lede">{cameraFallback ? circle.cameraBody : t.startLede}</p>
               {cameraError && <p className="capture-error" role="alert">{t[CAMERA_MESSAGES[cameraError]]}</p>}
               {photoError && <p className="capture-error" role="alert">{t.photoUnreadable}</p>}
               {cameraAvailable
@@ -533,47 +613,50 @@ export default function Experience({ screen }: { screen: Screen }) {
               {photo && <button type="button" className="capture-skip" onClick={() => goToStage(locationAnswered.current ? "review" : "location")}>{t.keepPhoto}</button>}
               {/* Fallbacks that need no camera permission: the phone's own camera app, or its photo picker. */}
               <input ref={nativeCameraInput} type="file" accept="image/*" capture="environment" className="visually-hidden" tabIndex={-1} aria-hidden="true" onChange={handlePhotoFile}/>
-              <input ref={photoLibraryInput} type="file" accept="image/*" className="visually-hidden" tabIndex={-1} aria-hidden="true" onChange={handlePhotoFile}/>
             </div>}
             {stage === "location" && <LocationStep text={t} language={lang.toLowerCase()} markets={MARKETS.map((code) => ({ code, label: FILTER_LABELS[code][lang] }))} initial={location} onDone={handleLocation}/>}
             {stage === "review" && <form onSubmit={handleSubmit} className="capture-form" noValidate>
               <h1 tabIndex={-1}>{t.captureTitle}</h1>
+              {STAGING_UPLOADS && <p className="capture-demo-note">{u.staging}</p>}
+              <fieldset disabled={uploading} style={{border: 0, padding: 0, margin: 0, minWidth: 0, display: "contents"}}>
               <div className="capture-meta">
                 <button type="button" onClick={() => goToStage("location")}><Icon name="pin" size={14}/>{location ? [location.city, location.country].filter(Boolean).join(", ") : t.addLocation}</button>
                 <button type="button" onClick={retakePhoto}><Icon name="camera" size={14}/>{t.retakePhoto}</button>
               </div>
               <label>{t.name}<input placeholder={t.name} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} autoComplete="name"/></label>
               <label>{t.description}<textarea rows={3} placeholder={t.descriptionPlaceholder} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300}/></label>
-              <label className="capture-consent"><input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); if (e.target.checked) setFormError(false); }}/><span className="capture-check" aria-hidden="true"><Icon name="check" size={13} stroke={2.4}/></span><span>{t.permission}</span></label>
+              {STAGING_UPLOADS && <>
+                <label className="capture-consent"><input type="checkbox" checked={processingConsent} onChange={e => setProcessingConsent(e.target.checked)}/><span className="capture-check" aria-hidden="true"><Icon name="check" size={13}/></span><span>{u.processing} <a href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/live/privacy/`} target="_blank" rel="noopener noreferrer">{u.privacy}</a></span></label>
+              </>}
+              <label className="capture-consent"><input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); if (e.target.checked) setFormError(false); }}/><span className="capture-check" aria-hidden="true"><Icon name="check" size={13} stroke={2.4}/></span><span>{t.permission}{STAGING_UPLOADS && ` (${u.optional})`}</span></label>
+              </fieldset>
+              {STAGING_UPLOADS && signedIn && <UploadVerification attempt={verificationAttempt} language={lang} onToken={setVerificationToken}/>}
               {/* Faded, not disabled: it stays clickable so an unchecked permission gets explained. */}
-              <button type="submit" className={`btn btn-white capture-submit ${consent ? "" : "is-inactive"}`} aria-describedby={formError ? "permission-error" : undefined}>{t.submitReview}</button>
-              {formError && <p id="permission-error" className="capture-error" role="alert">{t.permissionRequired}</p>}
+              <button type="submit" disabled={uploading} className={`btn btn-white capture-submit ${(STAGING_UPLOADS ? processingConsent : consent) ? "" : "is-inactive"}`} aria-describedby={formError ? "permission-error" : undefined}>{uploading ? u.sending : t.submitReview}</button>
+              {formError && <p id="permission-error" className="capture-error" role="alert">{STAGING_UPLOADS ? u.required : t.permissionRequired}</p>}
+              {uploadError && <p className="capture-error" role="alert">{u[uploadError]}</p>}
             </form>}
-            {stage === "email" && <form onSubmit={handleEmail} className="capture-form capture-centered" noValidate>
-              <h1 tabIndex={-1}>{t.bottleTitle}</h1>
-              <p className="capture-lede">{t.bottleBody}</p>
-              <label className="capture-field">{t.emailLabel}<input type="email" inputMode="email" autoComplete="email" placeholder={t.emailPlaceholder} value={email} onChange={(e) => { setEmail(e.target.value); setEmailError(""); }} aria-invalid={emailError ? true : undefined} aria-describedby={emailError ? "email-error" : undefined} maxLength={120}/></label>
-              {emailError && <p id="email-error" className="capture-error" role="alert">{emailError === "required" ? t.emailRequired : t.emailInvalid}</p>}
-              <button type="submit" className="btn btn-white capture-submit">{t.getCode}</button>
-              <button type="button" className="capture-skip" onClick={() => { setEmailError(""); setEmailChoice("declined"); goToStage("thankYou"); }}>{t.noThanks}</button>
-            </form>}
+            {stage === "account" && <MemberPanel language={lang} enabled={STAGING_UPLOADS} draft={draftId} onVerified={() => {
+              setSignedIn(true);
+              goToStage(photo ? "review" : "start");
+            }}/>}
             {stage === "thankYou" && <div className="capture-form capture-centered" role="status">
               <h1 tabIndex={-1}>{t.thanksTitle}</h1>
-              {/* No email is sent until a backend exists, so the inbox prompt stays hidden. */}
-              {emailChoice === "provided" && SUBMISSION_BACKEND_CONNECTED && <p className="capture-lede">{t.checkInbox}</p>}
               <a className="btn btn-white capture-submit" href={COMPANY_URL} target="_blank" rel="noopener noreferrer">{t.visitWebsite}<Icon name="external" size={15}/></a>
-              {!SUBMISSION_BACKEND_CONNECTED && <p className="capture-demo-note">{emailChoice === "provided" ? t.emailDemoNote : t.shareDemoNote}</p>}
+              {STAGING_UPLOADS && receipt ? <><p className="capture-lede">{u.success}</p><p className="capture-demo-note">{u.reference}: {receipt}</p></> : <p className="capture-demo-note">{t.shareDemoNote}</p>}
             </div>}
           </div>
         </section>}
       </div>
 
-      {screen === "share" && stage === "camera" && <CameraCapture text={t} onCapture={acceptPhoto} onError={handleCameraError} onCancel={() => {
+      {screen === "share" && <input ref={photoLibraryInput} type="file" accept="image/*" className="visually-hidden" tabIndex={-1} aria-hidden="true" onChange={handlePhotoFile}/>}
+      {screen === "share" && stage === "camera" && <CameraCapture text={t} intro={introSeen ? undefined : circle}
+        onIntroDone={() => setIntroSeen(true)} onChoose={() => photoLibraryInput.current?.click()} onCapture={acceptPhoto} onError={handleCameraError} onCancel={() => {
         stageChanged.current = true;
         setStage(!photo ? "start" : locationAnswered.current ? "review" : "location");
       }}/>}
 
-      {screen !== "share" && <Nav current={screen} text={t}/>}
+      {screen !== "share" && <Nav current={screen} text={t} account={circle.account}/>}
       <div className="phone-bottom-safe"/>
 
       {chosen && <div className="modal-backdrop moment-backdrop" onClick={() => setChosen(null)}><section className="moment-dialog" role="dialog" aria-modal="true" aria-label={chosen.title} onClick={e => e.stopPropagation()}><button className="modal-close" type="button" onClick={() => setChosen(null)} aria-label={t.close}><Icon name="x" size={21}/></button><div className="dialog-media"><Photo src={chosen.image} alt={chosen.title} className="dialog-photo"/><div className="dialog-body"><h2>{chosen.title}</h2><p>{chosen.note}</p></div></div><div className="dialog-byline"><span><Icon name="pin" size={15}/>{chosen.city}, {chosen.country}</span><span>{chosen.author}</span></div></section></div>}

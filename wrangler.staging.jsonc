@@ -1,0 +1,21 @@
+{
+  "name": "aponte-live-api",
+  "account_id": "419752c4c94565500455638dddb0d1bf",
+  "main": "worker/entry.ts",
+  "compatibility_date": "2026-04-28",
+  "workers_dev": true,
+  "preview_urls": false,
+  "routes": [],
+  "assets": {"directory": "./out", "binding": "ASSETS", "run_worker_first": ["/api/*"]},
+  "r2_buckets": [{"binding": "PHOTOS", "bucket_name": "aponte-live-photos", "jurisdiction": "eu"}],
+  "d1_databases": [{"binding": "DB", "database_name": "aponte-live-db", "database_id": "5d6f4fb8-6523-4f36-8acf-2eccddaad678", "migrations_dir": "worker/migrations"}, {"binding": "REVIEW_DB", "database_name": "aponte-admin-db", "database_id": "1bceba51-b8d8-41bb-8612-581af5873205"}],
+  "images": {"binding": "IMAGES"},
+  "ratelimits": [{"name": "UPLOAD_LIMITER", "namespace_id": "1103202601", "simple": {"limit": 5, "period": 60}}, {"name": "MEMBER_LIMITER", "namespace_id": "1111202602", "simple": {"limit": 10, "period": 60}}],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://aponte-live-api.pontelusocan.workers.dev",
+    "UPLOADS_ENABLED": "true",
+    "MEMBERS_ENABLED": "true"
+  },
+  "observability": {"enabled": false},
+  "triggers": {"crons": ["17 * * * *"]}
+}

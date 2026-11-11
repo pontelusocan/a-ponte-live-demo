@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:worker": "tsc -p worker/tsconfig.json",
+    "test:upload": "node --test worker/test/submissions.test.mjs"
   },
   "dependencies": {
     "next": "^15.5.0",
@@ -14,9 +16,10 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "sharp": "0.35.5",
+    "typescript": "^5.8.0"
   }
 }

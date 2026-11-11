@@ -1,0 +1,234 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState, type FormEvent } from "react";
+import Icon from "./Icon";
+import { circleCopy, type LiveLanguage } from "./PrivateCircle";
+import { clearLink, linkParameters, memberRequest, type Member, type MemberPhoto } from "@/lib/share/member-client";
+
+const translations = {
+  EN: {
+    register: "Create an account", login: "Sign in", username: "Username", email: "Email", password: "Password",
+    passwordHelp: "Use at least 12 characters.", relationship: "Your relationship with A PONTE",
+    roles: ["Customer", "Partner", "Distributor", "Other"], company: "Company name (optional)",
+    verify: "Verify your email", sent: "Open the verification link in your email, then return here.", resend: "Resend email",
+    check: "Check verification", logout: "Sign out", forgot: "Forgot your password?", reset: "Reset password", settings: "Account settings",
+    resetSent: "If there is a verified account for this address, a reset link will arrive by email.",
+    changed: "Password updated. Sign in to continue.", verified: "Email verified. Sign in if prompted.",
+    verifyAction: "Confirm email address", save: "Save profile", edit: "Edit profile", displayName: "Display name (optional)",
+    avatar: "Profile photo (optional)", remove: "Remove profile photo", submitted: "Photos submitted", approved: "Photos approved",
+    photos: "See my photos", empty: "You haven’t submitted any photos yet.", loading: "Loading…", privacy: "Privacy notice",
+    states: {pending: "Pending", approved: "Approved", declined: "Declined"},
+    unavailable: "Accounts are available in the connected staging app.", membership: "Membership levels are being developed.",
+    errors: {verify_sign_in: "Sign in with the account this verification link was sent to.", invalid_login: "Check your email and password.", invalid_fields: "Check the information you entered.", account_exists: "This email or username is already in use.", invalid_link: "This link has expired or already been used.", mail_unavailable: "Email delivery is temporarily unavailable. Try again later.", rate_limited: "Too many attempts. Wait a minute and try again.", default: "Something went wrong. Please try again."},
+  },
+  FR: {
+    register: "Créer un compte", login: "Se connecter", username: "Nom d’utilisateur", email: "E-mail", password: "Mot de passe",
+    passwordHelp: "Utilisez au moins 12 caractères.", relationship: "Votre lien avec A PONTE",
+    roles: ["Client", "Partenaire", "Distributeur", "Autre"], company: "Entreprise (facultatif)",
+    verify: "Vérifiez votre e-mail", sent: "Ouvrez le lien reçu par e-mail, puis revenez ici.", resend: "Renvoyer l’e-mail",
+    check: "Vérifier le statut", logout: "Se déconnecter", forgot: "Mot de passe oublié ?", reset: "Réinitialiser le mot de passe", settings: "Paramètres du compte",
+    resetSent: "Si un compte vérifié correspond à cette adresse, vous recevrez un lien par e-mail.",
+    changed: "Mot de passe modifié. Connectez-vous pour continuer.", verified: "Adresse vérifiée. Connectez-vous si nécessaire.",
+    verifyAction: "Confirmer l’adresse e-mail", save: "Enregistrer le profil", edit: "Modifier le profil", displayName: "Nom affiché (facultatif)",
+    avatar: "Photo de profil (facultative)", remove: "Supprimer la photo de profil", submitted: "Photos envoyées", approved: "Photos approuvées",
+    photos: "Voir mes photos", empty: "Vous n’avez pas encore envoyé de photo.", loading: "Chargement…", privacy: "Confidentialité",
+    states: {pending: "En attente", approved: "Approuvée", declined: "Refusée"},
+    unavailable: "Les comptes sont disponibles dans l’application de test connectée.", membership: "Les niveaux sont en cours de définition.",
+    errors: {verify_sign_in: "Connectez-vous au compte associé à ce lien de vérification.", invalid_login: "Vérifiez votre e-mail et votre mot de passe.", invalid_fields: "Vérifiez les informations saisies.", account_exists: "Cette adresse ou ce nom d’utilisateur est déjà utilisé.", invalid_link: "Ce lien a expiré ou a déjà été utilisé.", mail_unavailable: "L’envoi d’e-mails est temporairement indisponible.", rate_limited: "Trop de tentatives. Réessayez dans une minute.", default: "Une erreur est survenue. Veuillez réessayer."},
+  },
+  PT: {
+    register: "Criar conta", login: "Iniciar sessão", username: "Nome de utilizador", email: "Email", password: "Palavra-passe",
+    passwordHelp: "Use pelo menos 12 caracteres.", relationship: "A sua relação com a A PONTE",
+    roles: ["Cliente", "Parceiro", "Distribuidor", "Outro"], company: "Empresa (opcional)",
+    verify: "Confirme o seu email", sent: "Abra a ligação que recebeu por email e volte aqui.", resend: "Reenviar email",
+    check: "Verificar estado", logout: "Terminar sessão", forgot: "Esqueceu-se da palavra-passe?", reset: "Redefinir palavra-passe", settings: "Definições da conta",
+    resetSent: "Se existir uma conta verificada para este endereço, receberá uma ligação por email.",
+    changed: "Palavra-passe alterada. Inicie sessão para continuar.", verified: "Email confirmado. Inicie sessão se necessário.",
+    verifyAction: "Confirmar endereço de email", save: "Guardar perfil", edit: "Editar perfil", displayName: "Nome visível (opcional)",
+    avatar: "Fotografia de perfil (opcional)", remove: "Remover fotografia de perfil", submitted: "Fotografias enviadas", approved: "Fotografias aprovadas",
+    photos: "Ver as minhas fotografias", empty: "Ainda não enviou fotografias.", loading: "A carregar…", privacy: "Privacidade",
+    states: {pending: "Pendente", approved: "Aprovada", declined: "Recusada"},
+    unavailable: "As contas estão disponíveis na aplicação de testes ligada ao serviço.", membership: "Os níveis ainda estão a ser definidos.",
+    errors: {verify_sign_in: "Inicie sessão na conta associada a esta ligação de confirmação.", invalid_login: "Verifique o email e a palavra-passe.", invalid_fields: "Verifique os dados introduzidos.", account_exists: "Este email ou nome de utilizador já está em uso.", invalid_link: "Esta ligação expirou ou já foi utilizada.", mail_unavailable: "O envio de emails está temporariamente indisponível.", rate_limited: "Demasiadas tentativas. Tente novamente dentro de um minuto.", default: "Ocorreu um erro. Tente novamente."},
+  },
+};
+const roles = ["customer", "partner", "distributor", "other"];
+type Mode = "register" | "login" | "forgot" | "verify" | "reset";
+
+async function avatarFrom(file: File) {
+  if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) throw new Error("invalid_fields");
+  const bitmap = await createImageBitmap(file);
+  try {
+    const size = Math.min(bitmap.width, bitmap.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 192;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("invalid_fields");
+    context.drawImage(bitmap, (bitmap.width - size) / 2, (bitmap.height - size) / 2, size, size, 0, 0, 192, 192);
+    return canvas.toDataURL("image/jpeg", 0.82);
+  } finally { bitmap.close(); }
+}
+
+export default function MemberPanel({language, enabled, draft, onVerified}: {
+  language: LiveLanguage; enabled: boolean; draft?: string; onVerified?: () => void;
+}) {
+  const t = translations[language];
+  const circle = circleCopy[language];
+  const [mode, setMode] = useState<Mode>(draft ? "register" : "login");
+  const [member, setMember] = useState<Member | null>(null);
+  const [loading, setLoading] = useState(enabled);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [verifyLogin, setVerifyLogin] = useState(false);
+  const [token, setToken] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [avatar, setAvatar] = useState("");
+  const [photos, setPhotos] = useState<MemberPhoto[] | null>(null);
+  const [showPhotos, setShowPhotos] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    const params = linkParameters();
+    if (params.get("verify") || params.get("reset")) {
+      setMode(params.get("verify") ? "verify" : "reset");
+      setToken(params.get("verify") ?? params.get("reset") ?? "");
+    }
+    memberRequest<{member: Member | null}>("session")
+      .then(value => { if (active) setMember(value.member); })
+      .catch(() => { if (active) setError("default"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled || !member?.verified || onVerified || token) return;
+    let active = true;
+    memberRequest<{photos: MemberPhoto[]}>("photos").then(result => { if (active) setPhotos(result.photos); })
+      .catch(() => { if (active) setError("default"); });
+    return () => { active = false; };
+  }, [enabled, member, onVerified, token]);
+
+  async function run(action: () => Promise<void>) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try { await action(); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : "default"); }
+    finally { setBusy(false); }
+  }
+
+  async function auth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = Object.fromEntries(new FormData(event.currentTarget));
+    await run(async () => {
+      if (mode === "verify" && (!member || verifyLogin)) {
+        const session = await memberRequest<{member: Member}>("login", fields);
+        setMember(session.member);
+      }
+      let response: {member?: Member; mailFailed?: boolean};
+      try { response = await memberRequest(mode, {...fields, language, draft, token}); }
+      catch (failure) {
+        if (failure instanceof Error && failure.message === "verify_sign_in") setVerifyLogin(true);
+        throw failure;
+      }
+      if (response.member) {
+        setMember(response.member);
+        if (response.mailFailed) setError("mail_unavailable");
+        if (response.member.verified) onVerified?.();
+      }
+      if (mode === "forgot") setNotice(t.resetSent);
+      if (mode === "verify" || mode === "reset") {
+        clearLink();
+        setToken("");
+        setMode("login");
+        setNotice(mode === "verify" ? t.verified : t.changed);
+        const session = await memberRequest<{member: Member | null}>("session");
+        setMember(session.member);
+        if (session.member?.verified) onVerified?.();
+      }
+    });
+  }
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = Object.fromEntries(new FormData(event.currentTarget));
+    await run(async () => {
+      const result = await memberRequest<{member: Member}>("profile", {displayName: fields.displayName, company: fields.company, avatar});
+      setMember(result.member);
+      setEditing(false);
+    });
+  }
+
+  const button = "btn btn-white capture-submit";
+  const pending = Boolean(member && !member.verified && !token);
+  const profile = Boolean(member?.verified && !token);
+  const verificationNeedsLogin = mode === "verify" && (!member || verifyLogin);
+  const errorText = t.errors[error as keyof typeof t.errors] ?? t.errors.default;
+
+  return <section className="capture-form member-panel">
+    {loading ? <p role="status">{t.loading}</p> : !enabled ? <><h1>{circle.account}</h1><p>{t.unavailable}</p></> :
+      profile && member ? <>
+        <h1>{circle.account}</h1>
+        <div className="member-avatar">{member.avatar ? <img src={member.avatar} alt=""/> : <Icon name="person" size={35}/>}</div>
+        <h2>{member.displayName || member.username}</h2>
+        {member.displayName && <p>@{member.username}</p>}
+        {onVerified ? <button className={button} onClick={onVerified}>{circle.share}</button> : <>
+          <div className="member-counts"><span><strong>{photos?.length ?? "—"}</strong>{t.submitted}</span><span><strong>{photos?.filter(p => p.status === "approved").length ?? "—"}</strong>{t.approved}</span></div>
+          <button className="capture-skip" aria-expanded={showPhotos} onClick={() => setShowPhotos(!showPhotos)}>{t.photos}</button>
+          {showPhotos && (photos?.length ? <ul className="member-photos">{photos.map(photo => <li key={photo.id}><img loading="lazy" src={"/api/members/photos/" + photo.id} alt=""/><span>{photo.description}<small>{t.states[photo.status]}</small></span></li>)}</ul> : photos && <p>{t.empty}</p>)}
+          <p><strong>{circle.title}</strong><br/>{t.membership}</p>
+          <button className="capture-skip" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>{t.settings}</button>
+          {settingsOpen && <div className="member-actions">
+            <span>{member.email}</span>
+            <button className="capture-skip" disabled={busy} onClick={() => run(async () => {
+              await memberRequest("forgot", {email: member.email});
+              setNotice(t.resetSent);
+            })}>{t.reset}</button>
+          </div>}
+          {editing ? <form className="member-fields" onSubmit={save}>
+            <label>{t.displayName}<input name="displayName" defaultValue={member.displayName} maxLength={60}/></label>
+            <label>{t.company}<input name="company" defaultValue={member.company} maxLength={100}/></label>
+            <label>{t.avatar}<input type="file" accept="image/*" onChange={event => { const file = event.currentTarget.files?.[0]; if (file) void run(async () => setAvatar(await avatarFrom(file))); }}/></label>
+            {avatar && <button className="capture-skip" type="button" onClick={() => setAvatar("")}>{t.remove}</button>}
+            <button className={button} disabled={busy}>{t.save}</button>
+          </form> : <button className="capture-skip" onClick={() => { setAvatar(member.avatar); setEditing(true); }}>{t.edit}</button>}
+        </>}
+        <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("logout", {}); setMember(null); setPhotos(null); setEditing(false); setSettingsOpen(false); setMode("login"); })}>{t.logout}</button>
+      </> : pending ? <>
+        <h1>{t.verify}</h1><p>{t.sent}</p>
+        <button className={button} disabled={busy} onClick={() => run(async () => {
+          const session = await memberRequest<{member: Member | null}>("session");
+          setMember(session.member);
+          if (session.member?.verified) onVerified?.();
+          else if (session.member) setNotice(t.sent);
+        })}>{t.check}</button>
+        <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("resend", {draft}); setNotice(t.sent); })}>{t.resend}</button>
+        <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("logout", {}); setMember(null); setMode("login"); })}>{t.logout}</button>
+      </> : <>
+        <h1>{mode === "verify" ? t.verify : t[mode]}</h1>
+        <form key={mode} className="member-fields" onSubmit={auth}>
+          {mode === "register" && <label>{t.username}<input name="username" autoComplete="username" minLength={3} maxLength={40} required/></label>}
+          {((mode !== "verify" && mode !== "reset") || verificationNeedsLogin) && <label>{t.email}<input name="email" type="email" autoComplete="email" maxLength={254} required/></label>}
+          {((mode !== "verify" && mode !== "forgot") || verificationNeedsLogin) && <label>{t.password}<input type="password" name="password" autoComplete={mode === "login" || verificationNeedsLogin ? "current-password" : "new-password"} minLength={mode === "login" || verificationNeedsLogin ? undefined : 12} maxLength={128} required/>{mode !== "login" && !verificationNeedsLogin && <small>{t.passwordHelp}</small>}</label>}
+          {mode === "register" && <>
+            <label>{t.relationship}<select name="relationship" defaultValue="customer">{roles.map((role, i) => <option key={role} value={role}>{t.roles[i]}</option>)}</select></label>
+            <label>{t.company}<input name="company" autoComplete="organization" maxLength={100}/></label>
+          </>}
+          <button className={button} disabled={busy}>{mode === "verify" ? t.verifyAction : t[mode]}</button>
+        </form>
+        {!token && <div className="member-actions">
+          {mode !== "login" && <button className="capture-skip" onClick={() => {setMode("login"); setError(""); setNotice("");}}>{t.login}</button>}
+          {mode !== "register" && <button className="capture-skip" onClick={() => {setMode("register"); setError(""); setNotice("");}}>{t.register}</button>}
+          {mode === "login" && <button className="capture-skip" onClick={() => {setMode("forgot"); setError(""); setNotice("");}}>{t.forgot}</button>}
+        </div>}
+      </>}
+    {error && <p className="capture-error" role="alert">{errorText}</p>}
+    {notice && <p role="status">{notice}</p>}
+    <Link href="/live/privacy/" className="capture-skip">{t.privacy}</Link>
+  </section>;
+}

@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 
 export default function Icon({ name, size = 19, stroke = 1.6 }: { name: string; size?: number; stroke?: number }) {
   const paths: Record<string, ReactNode> = {
+    person: <><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></>,
+    connection: <><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></>,
+    sparkle: <path d="M12 2l2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6L12 2Z"/>,
     compass: <><circle cx="12" cy="12" r="9"/><path d="m16 8-2.6 5.4L8 16l2.6-5.4L16 8Z"/></>,
     images: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 16-5.5-5.5L5 21"/></>,
     plus: <><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></>,

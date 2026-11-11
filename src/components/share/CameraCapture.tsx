@@ -11,8 +11,11 @@ type Status = "starting" | "live" | "capturing" | "captured";
 // Full-screen live preview over the phone screen. The camera runs only while this is mounted and
 // no photo is waiting for confirmation: capturing, closing, unmounting or hiding the page stops
 // every track.
-export default function CameraCapture({ text, onCapture, onCancel, onError }: {
+export default function CameraCapture({ text, intro, onIntroDone, onChoose, onCapture, onCancel, onError }: {
   text: Text;
+  intro?: {cameraTitle: string; cameraBody: string; take: string; choose: string};
+  onIntroDone: () => void;
+  onChoose: () => void;
   onCapture: (photo: CapturedPhoto) => void;
   onCancel: () => void;
   onError: (kind: CameraErrorKind) => void;
@@ -109,18 +112,23 @@ export default function CameraCapture({ text, onCapture, onCancel, onError }: {
   }
 
   return <div className="camera-view" role="dialog" aria-modal="true" aria-label={text.cameraLabel}>
-    <video ref={video} className={`camera-video ${mirrored ? "is-mirrored" : ""}`} hidden={!!captured} autoPlay playsInline muted onPlaying={() => setStatus((s) => (s === "starting" ? "live" : s))}/>
+    <video ref={video} className={`camera-video ${intro ? "camera-video-blurred" : ""} ${mirrored ? "is-mirrored" : ""}`} hidden={!!captured} autoPlay playsInline muted onPlaying={() => setStatus((s) => (s === "starting" ? "live" : s))}/>
     {captured && capturedUrl && <img className="camera-still" src={capturedUrl} alt={text.capturedAlt}/>}
     {status === "starting" && <p className="camera-status" role="status">{text.cameraStarting}</p>}
     <button ref={closeButton} type="button" className="capture-close" onClick={onCancel} aria-label={text.closeCamera}><Icon name="x" size={20}/></button>
     {captureFailed && <p className="camera-error" role="alert">{text.captureFailed}</p>}
-    <div className="camera-controls">
+    {intro ? <section className="capture-form camera-intro">
+      <h1>{intro.cameraTitle}</h1>
+      <p>{intro.cameraBody}</p>
+      <button type="button" className="btn btn-white capture-submit" onClick={onIntroDone}>{intro.take}</button>
+      <button type="button" className="capture-skip" onClick={onChoose}>{intro.choose}</button>
+    </section> : <div className="camera-controls">
       {captured
         ? <>
           <button type="button" className="btn btn-outline" onClick={retake}>{text.retake}</button>
           <button type="button" className="btn btn-white" onClick={() => onCapture(captured)}>{text.usePhoto}</button>
         </>
         : <button type="button" className="camera-shutter" onClick={takePhoto} disabled={status !== "live"} aria-label={text.capturePhoto}/>}
-    </div>
+    </div>}
   </div>;
 }
