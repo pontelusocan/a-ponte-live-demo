@@ -7,7 +7,7 @@
 .circle-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; padding: 0; list-style: none; }
 .circle-steps li { display: grid; justify-items: center; align-content: start; gap: .55rem; font-size: .85rem; }
 .circle-steps svg { color: #fff; }
-.circle-steps + p { margin-top: 1.65rem; }
+.circle-steps + p { margin-top: 2.1rem; }
 .circle-strip { display: flex; overflow-x: auto; scrollbar-width: none; margin: 1.2rem -1.35rem; mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
 .circle-strip::-webkit-scrollbar { display: none; }
 .circle-strip:focus-visible { outline: 2px solid #dfb683; outline-offset: -2px; }

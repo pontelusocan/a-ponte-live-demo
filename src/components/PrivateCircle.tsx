@@ -7,7 +7,7 @@ import { STAGING_UPLOADS } from "@/lib/share/submission";
 export type LiveLanguage = "EN" | "FR" | "PT";
 export const circleCopy = {
   EN: {
-    title: "The A PONTE Private Circle",
+    title: "A PONTE Private Circle",
     steps: ["Share moments", "Build engagement", "Unlock benefits"],
     body: "Members who regularly share photos and take part in the A PONTE community may qualify for higher membership levels and enjoy more benefits.",
     benefits: ["Wine discounts", "Event filming & editing", "Press features", "TV exposure"],
