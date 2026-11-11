@@ -7,6 +7,53 @@
 .circle-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; padding: 0; list-style: none; }
 .circle-steps li { display: grid; justify-items: center; align-content: start; gap: .55rem; font-size: .85rem; }
 .circle-steps svg { color: #fff; }
+.circle-step-caption { display: grid; overflow: hidden; }
+.circle-step-caption > span { grid-area: 1 / 1; }
+.circle-shackle { transform-origin: 8px 10px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .circle-steps li {
+    /* Three 2.6s slots, followed by a 4s pause. */
+    --circle-cycle: 11.8s;
+    --circle-delay: 0s;
+  }
+  .circle-steps li:nth-child(2) { --circle-delay: 2.6s; }
+  .circle-steps li:nth-child(3) { --circle-delay: 5.2s; }
+  .circle-step-caption > span {
+    opacity: 0;
+    transform: translateY(100%);
+    animation: circle-caption var(--circle-cycle) var(--circle-delay) ease-in-out infinite;
+  }
+  .circle-steps li:first-child svg {
+    animation: circle-camera-flash var(--circle-cycle) var(--circle-delay) ease-out infinite;
+  }
+  .circle-arrow {
+    animation: circle-arrow-rise var(--circle-cycle) var(--circle-delay) ease-out infinite;
+  }
+  .circle-shackle {
+    animation: circle-unlock var(--circle-cycle) var(--circle-delay) ease-in-out infinite;
+  }
+}
+@keyframes circle-caption {
+  0%, 22.034%, 100% { opacity: 0; transform: translateY(100%); }
+  2.542%, 19.492% { opacity: 1; transform: translateY(0); }
+}
+@keyframes circle-camera-flash {
+  0%, 3.4%, 100% { filter: none; transform: none; }
+  1.4% { filter: drop-shadow(0 0 5px #fff); transform: scale(1.12); }
+}
+@keyframes circle-arrow-rise {
+  0%, 100% { stroke-dasharray: 1; stroke-dashoffset: 0; }
+  0.8% { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  5.8% { stroke-dasharray: 1; stroke-dashoffset: 0; }
+}
+@keyframes circle-unlock {
+  0%, 22.034%, 100% { transform: none; }
+  4.5%, 19.492% { transform: translateY(-1px) rotate(-25deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .circle-shackle { transform: translateY(-1px) rotate(-25deg); }
+}
 .circle-steps + p { margin-top: 2.1rem; }
 .circle-strip { display: flex; overflow-x: auto; scrollbar-width: none; margin: 1.2rem -1.35rem; mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
 .circle-strip::-webkit-scrollbar { display: none; }

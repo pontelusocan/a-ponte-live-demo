@@ -78,7 +78,7 @@ export default function PrivateCircle({ language }: { language: LiveLanguage }) 
   const labels = STAGING_UPLOADS ? [...copy.benefits, ...copy.ideas] : copy.benefits;
   return <section className="private-circle" aria-labelledby="circle-heading">
     <h2 id="circle-heading">{copy.title}</h2>
-    <ol className="circle-steps">{copy.steps.map((step, i) => <li key={step}><Icon name={["camera", "engagement", "unlock"][i]} size={25}/><span>{step}</span></li>)}</ol>
+    <ol className="circle-steps">{copy.steps.map((step, i) => <li key={step}><Icon name={["camera", "engagement", "unlock"][i]} size={25}/><span className="circle-step-caption"><span>{step}</span></span></li>)}</ol>
     <p>{copy.body}</p>
     <div ref={strip} className="circle-strip" role="region" aria-label={copy.steps[2]} tabIndex={0}
       onPointerDown={() => { pauseUntil.current = performance.now() + 5000; }}
