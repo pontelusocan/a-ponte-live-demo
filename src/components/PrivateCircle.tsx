@@ -9,8 +9,7 @@ export const circleCopy = {
   EN: {
     title: "The A PONTE Private Circle",
     steps: ["Share moments", "Build engagement", "Unlock benefits"],
-    body: "Members who regularly share photos and take part in the A PONTE community may qualify for higher membership levels. Possible benefits include wine discounts, complimentary filming and editing for a member’s event, and press or TV exposure through A PONTE’s audiovisual network, including World Business Headsup.",
-    note: "Levels, eligibility and benefits are still being finalised.",
+    body: "Members who regularly share photos and take part in the A PONTE community may qualify for higher membership levels and enjoy more benefits.",
     benefits: ["Wine discounts", "Event filming & editing", "Press features", "TV exposure"],
     ideas: ["Private tasting invitations", "Early access to new releases", "Invitations to A PONTE events"],
     share: "Share your moment", account: "Account", cameraTitle: "Your moment could be the beginning.",
@@ -20,8 +19,7 @@ export const circleCopy = {
   FR: {
     title: "Le Cercle privé A PONTE",
     steps: ["Partager des moments", "Participer régulièrement", "Accéder aux avantages"],
-    body: "Les membres qui partagent régulièrement des photos et participent à la communauté A PONTE pourront accéder à des niveaux supérieurs. Les avantages envisagés comprennent des réductions sur les vins, le tournage et le montage offerts pour un événement, et une visibilité dans la presse ou à la télévision via le réseau audiovisuel A PONTE, dont World Business Headsup.",
-    note: "Les niveaux, les conditions d’accès et les avantages sont en cours de définition.",
+    body: "Les membres qui partagent régulièrement des photos et participent à la communauté A PONTE peuvent accéder à des niveaux supérieurs et profiter de plus d’avantages.",
     benefits: ["Réductions sur les vins", "Tournage et montage", "Articles de presse", "Visibilité à la télévision"],
     ideas: ["Dégustations privées", "Accès anticipé aux nouveautés", "Invitations aux événements A PONTE"],
     share: "Partagez votre moment", account: "Compte", cameraTitle: "Votre moment pourrait être un début.",
@@ -31,8 +29,7 @@ export const circleCopy = {
   PT: {
     title: "O Círculo Privado A PONTE",
     steps: ["Partilhar momentos", "Participar regularmente", "Aceder a benefícios"],
-    body: "Os membros que partilham fotografias regularmente e participam na comunidade A PONTE poderão aceder a níveis superiores. Os possíveis benefícios incluem descontos nos vinhos, filmagem e montagem gratuitas de um evento, e visibilidade na imprensa ou televisão através da rede audiovisual A PONTE, incluindo a World Business Headsup.",
-    note: "Os níveis, as condições de acesso e os benefícios ainda estão a ser definidos.",
+    body: "Os membros que partilham fotografias regularmente e participam na comunidade A PONTE podem aceder a níveis superiores e desfrutar de mais benefícios.",
     benefits: ["Descontos nos vinhos", "Filmagem e montagem", "Destaque na imprensa", "Visibilidade na televisão"],
     ideas: ["Provas privadas", "Acesso antecipado a novidades", "Convites para eventos A PONTE"],
     share: "Partilhe o seu momento", account: "Conta", cameraTitle: "O seu momento pode ser o início.",
@@ -83,7 +80,6 @@ export default function PrivateCircle({ language }: { language: LiveLanguage }) 
     <h2 id="circle-heading">{copy.title}</h2>
     <ol className="circle-steps">{copy.steps.map((step, i) => <li key={step}><Icon name={["camera", "engagement", "unlock"][i]} size={25}/><span>{step}</span></li>)}</ol>
     <p>{copy.body}</p>
-    <p className="circle-note">{copy.note}</p>
     <div ref={strip} className="circle-strip" role="region" aria-label={copy.steps[2]} tabIndex={0}
       onPointerDown={() => { pauseUntil.current = performance.now() + 5000; }}
       onPointerUp={() => { pauseUntil.current = performance.now() + 5000; }}
