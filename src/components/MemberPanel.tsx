@@ -102,6 +102,14 @@ async function avatarFrom(file: File) {
   } finally { bitmap.close(); }
 }
 
+function WaiterBackdrop({ waiting = false }: { waiting?: boolean }) {
+  const image = waiting ? "waiting-waiter.webp" : "login-waiter.webp";
+  return <div className="member-login-backdrop" aria-hidden="true">
+    <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/brand/${image}`} alt="" decoding="async"/>
+    <span className="hero-dark"/>
+  </div>;
+}
+
 export default function MemberPanel({language, enabled, draft, onVerified, onOpenPhoto}: {
   language: LiveLanguage; enabled: boolean; draft?: string; onVerified?: () => void; onOpenPhoto?: (photo: MemberPhoto, status: string) => void;
 }) {
@@ -264,7 +272,10 @@ export default function MemberPanel({language, enabled, draft, onVerified, onOpe
         </>}
         <button className="capture-skip" disabled={busy} onClick={() => run(async () => { await memberRequest("logout", {}); setMember(null); setPhotos(null); setEditing(false); setSettingsOpen(false); setMode("login"); })}>{t.logout}</button>
       </> : pending ? <>
-        <h1>{t.verify}</h1><p>{t.sent}</p>
+        <div className="member-verification-intro">
+          <WaiterBackdrop waiting/>
+          <h1>{t.verify}</h1><p>{t.sent}</p>
+        </div>
         <button className={button} disabled={busy} onClick={() => run(async () => {
           const session = await memberRequest<{member: Member | null}>("session");
           setMember(session.member);
@@ -280,14 +291,14 @@ export default function MemberPanel({language, enabled, draft, onVerified, onOpe
         <button className={button} onClick={() => setMode("login")}>{t.login}</button>
         <button className="btn btn-outline capture-submit" onClick={() => setMode("register")}>{t.register}</button>
       </> : <>
-        <h1>{mode === "verify" ? t.verify : t[mode]}</h1>
+        <div className={mode === "verify" ? "member-verification-intro" : undefined}>
+          {mode === "verify" && <WaiterBackdrop waiting/>}
+          <h1>{mode === "verify" ? t.verify : t[mode]}</h1>
+        </div>
         <form key={mode} className="member-fields" onSubmit={auth}>
           {mode === "register" && <label>{t.username}<input name="username" autoComplete="username" minLength={3} maxLength={40} required/></label>}
-          {((mode !== "verify" && mode !== "reset") || verificationNeedsLogin) && <div className={mode === "login" ? "member-login-email" : undefined}>
-            {mode === "login" && <div className="member-login-backdrop" aria-hidden="true">
-              <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/brand/login-waiter.webp`} alt="" decoding="async"/>
-              <span className="hero-dark"/>
-            </div>}
+          {((mode !== "verify" && mode !== "reset") || verificationNeedsLogin) && <div className={mode === "login" || mode === "register" ? "member-login-email" : undefined}>
+            {(mode === "login" || mode === "register") && <WaiterBackdrop waiting={mode === "register"}/>}
             <label>{t.email}<input name="email" type="email" autoComplete="email" maxLength={254} required/></label>
           </div>}
           {((mode !== "verify" && mode !== "forgot") || verificationNeedsLogin) && <PasswordField label={t.password} name="password" t={t} isNew={choosingPassword} onChange={choosingPassword ? setPassword : undefined}/>}
