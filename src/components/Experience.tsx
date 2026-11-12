@@ -69,20 +69,20 @@ const LANGUAGES: { code: Language; label: string; flagClass: string }[] = [
   { code: "PT", label: "Português", flagClass: "fi-pt" },
 ];
 // Blurred behind the Share screen until the visitor has taken or chosen their own photo.
-const SHARE_PLACEHOLDER_PHOTO = asset("/brand/image-2.png");
-const PHOTO = (id: string, width = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
+const SHARE_PLACEHOLDER_PHOTO = asset("/brand/image-2.webp");
+const PHOTO = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=480&q=74`;
 
 // Editorial, illustrative imagery — not actual A PONTE submissions. Replace before launch.
 const MOMENTS: Moment[] = [
-  { id: 1, title: "An evening to remember", author: "Sofia M.", city: "Lisbon", countryCode: "PT", country: "Portugal", image: PHOTO("photo-1510812431401-41d2bd2722f3", 650), height: "tall", note: "The best conversations happen around a shared table." },
-  { id: 2, title: "Across the table", author: "Marc D.", city: "Montréal", countryCode: "CA", country: "Canada", image: PHOTO("photo-1414235077428-338989a2e8c0", 650), height: "medium", note: "Some evenings stay with us long after the last glass." },
-  { id: 3, title: "Golden hour", author: "Inês R.", city: "Porto", countryCode: "PT", country: "Portugal", image: PHOTO("photo-1506377247377-2a5b3b417ebb", 650), height: "medium", note: "A little sunshine. A lovely wine. The right people." },
-  { id: 4, title: "A special celebration", author: "Claire N.", city: "Douala", countryCode: "CM", country: "Cameroon", image: PHOTO("photo-1511795409834-ef04bbd61622", 650), height: "tall", note: "An occasion worth remembering, with people worth celebrating." },
-  { id: 5, title: "The art of gathering", author: "Daniel T.", city: "Toronto", countryCode: "CA", country: "Canada", image: PHOTO("photo-1528823872057-9c018a7a7553", 650), height: "tall", note: "Good company has no borders." },
-  { id: 6, title: "A toast to friendship", author: "Émilie K.", city: "Yaoundé", countryCode: "CM", country: "Cameroon", image: PHOTO("photo-1528605248644-14dd04022da1", 650), height: "medium", note: "A little moment, a big memory." },
-  { id: 7, title: "Sunday, slowly", author: "Joana F.", city: "Cascais", countryCode: "PT", country: "Portugal", image: PHOTO("photo-1498804103079-a6351b050096", 650), height: "short", note: "Slow afternoons and stories that linger." },
-  { id: 8, title: "Together again", author: "Alex B.", city: "Ottawa", countryCode: "CA", country: "Canada", image: PHOTO("photo-1519167758481-83f550bb49b3", 650), height: "medium", note: "Distance changes. Friendship doesn't." },
-  { id: 9, title: "A night of discovery", author: "Nadine E.", city: "Douala", countryCode: "CM", country: "Cameroon", image: PHOTO("photo-1531058020387-3be344556be6", 650), height: "medium", note: "A shared discovery, a new tradition." },
+  { id: 1, title: "An evening to remember", author: "Sofia M.", city: "Lisbon", countryCode: "PT", country: "Portugal", image: PHOTO("photo-1510812431401-41d2bd2722f3"), height: "tall", note: "The best conversations happen around a shared table." },
+  { id: 2, title: "Across the table", author: "Marc D.", city: "Montréal", countryCode: "CA", country: "Canada", image: PHOTO("photo-1414235077428-338989a2e8c0"), height: "medium", note: "Some evenings stay with us long after the last glass." },
+  { id: 3, title: "Golden hour", author: "Inês R.", city: "Porto", countryCode: "PT", country: "Portugal", image: PHOTO("photo-1506377247377-2a5b3b417ebb"), height: "medium", note: "A little sunshine. A lovely wine. The right people." },
+  { id: 4, title: "A special celebration", author: "Claire N.", city: "Douala", countryCode: "CM", country: "Cameroon", image: PHOTO("photo-1511795409834-ef04bbd61622"), height: "tall", note: "An occasion worth remembering, with people worth celebrating." },
+  { id: 5, title: "The art of gathering", author: "Daniel T.", city: "Toronto", countryCode: "CA", country: "Canada", image: PHOTO("photo-1528823872057-9c018a7a7553"), height: "tall", note: "Good company has no borders." },
+  { id: 6, title: "A toast to friendship", author: "Émilie K.", city: "Yaoundé", countryCode: "CM", country: "Cameroon", image: PHOTO("photo-1528605248644-14dd04022da1"), height: "medium", note: "A little moment, a big memory." },
+  { id: 7, title: "Sunday, slowly", author: "Joana F.", city: "Cascais", countryCode: "PT", country: "Portugal", image: PHOTO("photo-1498804103079-a6351b050096"), height: "short", note: "Slow afternoons and stories that linger." },
+  { id: 8, title: "Together again", author: "Alex B.", city: "Ottawa", countryCode: "CA", country: "Canada", image: PHOTO("photo-1519167758481-83f550bb49b3"), height: "medium", note: "Distance changes. Friendship doesn't." },
+  { id: 9, title: "A night of discovery", author: "Nadine E.", city: "Douala", countryCode: "CM", country: "Cameroon", image: PHOTO("photo-1531058020387-3be344556be6"), height: "medium", note: "A shared discovery, a new tradition." },
 ];
 
 // Community carousel: Portugal and Canada, then Cameroon and the other African
@@ -124,25 +124,21 @@ const PHOTO_CREDITS: Record<string, { author: string; licence: string; licenceUr
 };
 
 // Hero photographs rotate on their own timer, independent of the hero copy below.
-// public/hero/ holds unmodified copies of the hero-section.images folder (AI-generated
-// for this demo, not customer photographs); image-2.png
-// is the two-glasses toast kept from the previous hero, shown unzoomed and still.
-// Every other photo is zoomed slightly into its centre and drifts slowly in a fixed
-// direction (see .kb-* in globals.css).
+// Mobile-sized WebP versions of the illustrative hero photographs.
 type HeroMotion = "still" | "ltr" | "rtl" | "up" | "down" | "rise" | "fall";
 const HERO_PHOTOS: { src: string; motion: HeroMotion }[] = [
-  { src: asset("/brand/image-2.png"), motion: "still" },
-  { src: asset("/hero/Celebração de casamento no jardim.png"), motion: "ltr" },
-  { src: asset("/hero/Conversa entre arte e vinho.png"), motion: "rtl" },
-  { src: asset("/hero/Convívio de inverno num chalé alpino.png"), motion: "up" },
-  { src: asset("/hero/Festa animada entre amigos em casa.png"), motion: "fall" },
-  { src: asset("/hero/Festa de aniversário num terraço lisboeta.png"), motion: "down" },
-  { src: asset("/hero/Jantar à Luz de Velas na Terraça.png"), motion: "rtl" },
-  { src: asset("/hero/Jantar Aconchegante ao Luar.png"), motion: "ltr" },
-  { src: asset("/hero/Jantar Romântico à Luz de Velas.png"), motion: "up" },
-  { src: asset("/hero/Piquenique primaveril entre amigos.png"), motion: "rise" },
-  { src: asset("/hero/Risos ao pôr do sol no mar.png"), motion: "down" },
-  { src: asset("/hero/Selfie ao pôr do sol junto ao marb.png"), motion: "fall" },
+  { src: asset("/brand/image-2.webp"), motion: "still" },
+  { src: asset("/hero/Celebração de casamento no jardim.webp"), motion: "ltr" },
+  { src: asset("/hero/Conversa entre arte e vinho.webp"), motion: "rtl" },
+  { src: asset("/hero/Convívio de inverno num chalé alpino.webp"), motion: "up" },
+  { src: asset("/hero/Festa animada entre amigos em casa.webp"), motion: "fall" },
+  { src: asset("/hero/Festa de aniversário num terraço lisboeta.webp"), motion: "down" },
+  { src: asset("/hero/Jantar à Luz de Velas na Terraça.webp"), motion: "rtl" },
+  { src: asset("/hero/Jantar Aconchegante ao Luar.webp"), motion: "ltr" },
+  { src: asset("/hero/Jantar Romântico à Luz de Velas.webp"), motion: "up" },
+  { src: asset("/hero/Piquenique primaveril entre amigos.webp"), motion: "rise" },
+  { src: asset("/hero/Risos ao pôr do sol no mar.webp"), motion: "down" },
+  { src: asset("/hero/Selfie ao pôr do sol junto ao marb.webp"), motion: "fall" },
 ];
 const HERO_PHOTO_MS = 8000;
 const HERO_TEXT_MS = 12000;
@@ -223,7 +219,30 @@ function Photo({ src, alt, className = "", art = true }: { src: string; alt: str
     "1531058020387-3be344556be6": 4,
   };
   const fallback = styles[photoId] ?? 0;
-  return <div className={`photo ${className}`} style={art ? {backgroundImage: `url(${asset(`/art/wine-${fallback}.svg`)})`, backgroundPosition: "center", backgroundSize: "cover"} : undefined}><img src={src} alt={alt} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} /></div>;
+  return <div className={`photo ${className}`} style={art ? {backgroundImage: `url(${asset(`/art/wine-${fallback}.svg`)})`, backgroundPosition: "center", backgroundSize: "cover"} : undefined}><img src={src} alt={alt} loading={className === "dialog-photo" ? "eager" : "lazy"} decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} /></div>;
+}
+
+function PhotoDialog({image, title, note, closeLabel, onClose, byline}: {
+  image: string; title: string; note: string; closeLabel: string; onClose: () => void; byline?: React.ReactNode;
+}) {
+  const trigger = useRef<HTMLElement | null>(null);
+  const close = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    trigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    close.current?.focus({preventScroll: true});
+    return () => trigger.current?.focus({preventScroll: true});
+  }, []);
+  return <div className="modal-backdrop moment-backdrop" onClick={onClose}>
+    <section className="moment-dialog" role="dialog" aria-modal="true" aria-label={title} onClick={event => event.stopPropagation()}
+      onKeyDown={event => { if (event.key === "Tab") { event.preventDefault(); close.current?.focus(); } }}>
+      <button ref={close} className="modal-close" type="button" onClick={onClose} aria-label={closeLabel}><Icon name="x" size={21}/></button>
+      <div className="dialog-media">
+        <Photo src={image} alt={note} className="dialog-photo"/>
+        <div className="dialog-body"><h2>{title}</h2><p>{note}</p></div>
+      </div>
+      {byline && <div className="dialog-byline">{byline}</div>}
+    </section>
+  </div>;
 }
 
 // One hero photograph. Later layers fade in over the previous one once their image
@@ -256,6 +275,7 @@ export default function Experience({ screen }: { screen: Screen }) {
   const [pageVisible, setPageVisible] = useState(true);
   const [country, setCountry] = useState<CountryFilter>("all");
   const [chosen, setChosen] = useState<Moment | null>(null);
+  const [accountPhoto, setAccountPhoto] = useState<{image: string; description: string; status: string} | null>(null);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const creditsTrigger = useRef<HTMLButtonElement>(null);
   const creditsWasOpen = useRef(false);
@@ -379,7 +399,7 @@ export default function Experience({ screen }: { screen: Screen }) {
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { setChosen(null); setIsLangOpen(false); setCreditsOpen(false); }
+      if (event.key === "Escape") { setChosen(null); setAccountPhoto(null); setIsLangOpen(false); setCreditsOpen(false); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -581,7 +601,7 @@ export default function Experience({ screen }: { screen: Screen }) {
             <div className="slide-controls"><div className="slide-arrows"><button type="button" aria-label="Previous photo" onClick={() => showPhoto(-1)}><Icon name="left"/></button><button type="button" aria-label="Next photo" onClick={() => showPhoto(1)}><Icon name="right"/></button></div></div>
           </div>
           <section className="featured-section"><span className="eyebrow gold-text">{t.fromCommunity}</span><h2>{t.featured}</h2><p>{t.featuredSub}</p><div className="featured-carousel" role="region" aria-label={t.featured} tabIndex={0} onPointerDown={startCarouselDrag} onPointerMove={moveCarouselDrag} onPointerUp={endCarouselDrag} onPointerCancel={endCarouselDrag} onDragStart={(e) => e.preventDefault()} onClickCapture={(e) => { if (suppressCarouselClick.current) { e.preventDefault(); e.stopPropagation(); } }}>
-            {CITIES.map((c) => <figure key={c.slug} className="featured-tile"><Photo src={asset(`/cities/${c.slug}.jpg`)} alt={`Illustrative photograph of ${c.city.EN}`}/><figcaption><span>{c.city[lang]}</span><small>{c.country[lang]}</small></figcaption></figure>)}
+            {CITIES.map((c) => <figure key={c.slug} className="featured-tile"><Photo src={asset(`/cities/${c.slug}.webp`)} alt={`Illustrative photograph of ${c.city.EN}`}/><figcaption><span>{c.city[lang]}</span><small>{c.country[lang]}</small></figcaption></figure>)}
             <Link href="/live/moments" className="featured-tile featured-view-all"><span>{t.viewAll}</span><Icon name="arrow" size={22}/></Link>
           </div><ShareExperienceLink label={t.shareExperience}/><button ref={creditsTrigger} type="button" className="credits-link" onClick={() => setCreditsOpen(true)}>{t.photoCredits}</button></section>
           <PrivateCircle language={lang}/>
@@ -594,7 +614,7 @@ export default function Experience({ screen }: { screen: Screen }) {
           <div className="gallery-outro"><p>{t.galleryOutro1}<br/><em>{t.galleryOutro2}</em></p><ShareExperienceLink label={t.shareExperience}/></div>
         </section>}
 
-        {screen === "account" && <section className="capture-screen"><MemberPanel language={lang} enabled={STAGING_UPLOADS}/></section>}
+        {screen === "account" && <section className="capture-screen"><MemberPanel language={lang} enabled={STAGING_UPLOADS} onOpenPhoto={(photo, status) => setAccountPhoto({image: "/api/members/photos/" + photo.id, description: photo.description, status})}/></section>}
 
         {screen === "share" && <section className={`capture-screen ${stage === "start" && cameraFallback ? "circle-camera-fallback" : ""}`}>
           <div key={stage} ref={stageRef} className={`capture-stage ${leavingStage ? "leaving" : ""}`}>
@@ -655,7 +675,9 @@ export default function Experience({ screen }: { screen: Screen }) {
       {screen !== "share" && <Nav current={screen} text={t} account={circle.account}/>}
       <div className="phone-bottom-safe"/>
 
-      {chosen && <div className="modal-backdrop moment-backdrop" onClick={() => setChosen(null)}><section className="moment-dialog" role="dialog" aria-modal="true" aria-label={chosen.title} onClick={e => e.stopPropagation()}><button className="modal-close" type="button" onClick={() => setChosen(null)} aria-label={t.close}><Icon name="x" size={21}/></button><div className="dialog-media"><Photo src={chosen.image} alt={chosen.title} className="dialog-photo"/><div className="dialog-body"><h2>{chosen.title}</h2><p>{chosen.note}</p></div></div><div className="dialog-byline"><span><Icon name="pin" size={15}/>{chosen.city}, {chosen.country}</span><span>{chosen.author}</span></div></section></div>}
+      {chosen && <PhotoDialog image={chosen.image.replace("w=480&q=74", "w=900&q=82")} title={chosen.title} note={chosen.note} closeLabel={t.close} onClose={() => setChosen(null)}
+        byline={<><span><Icon name="pin" size={15}/>{chosen.city}, {chosen.country}</span><span>{chosen.author}</span></>}/>}
+      {accountPhoto && <PhotoDialog image={accountPhoto.image} title={accountPhoto.status} note={accountPhoto.description} closeLabel={t.close} onClose={() => setAccountPhoto(null)}/>}
       {creditsOpen && <div className="modal-backdrop moment-backdrop" onClick={() => setCreditsOpen(false)}><section className="credits-dialog" role="dialog" aria-modal="true" aria-labelledby="credits-title" onClick={e => e.stopPropagation()}><button className="modal-close" type="button" autoFocus onClick={() => setCreditsOpen(false)} aria-label={t.close}><Icon name="x" size={21}/></button><h2 id="credits-title">{t.photoCredits}</h2><p>{t.creditsIntro}</p><ul>{CITIES.map((c) => { const credit = PHOTO_CREDITS[c.slug]; return <li key={c.slug}><strong>{c.city[lang]}</strong><span>{credit.author} · <a href={credit.licenceUrl} target="_blank" rel="noopener noreferrer">{credit.licence}</a> · <a href={credit.source} target="_blank" rel="noopener noreferrer">{t.source}</a></span></li>; })}</ul></section></div>}
     </div>
   </main>;

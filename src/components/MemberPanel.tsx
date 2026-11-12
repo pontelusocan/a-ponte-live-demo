@@ -102,8 +102,8 @@ async function avatarFrom(file: File) {
   } finally { bitmap.close(); }
 }
 
-export default function MemberPanel({language, enabled, draft, onVerified}: {
-  language: LiveLanguage; enabled: boolean; draft?: string; onVerified?: () => void;
+export default function MemberPanel({language, enabled, draft, onVerified, onOpenPhoto}: {
+  language: LiveLanguage; enabled: boolean; draft?: string; onVerified?: () => void; onOpenPhoto?: (photo: MemberPhoto, status: string) => void;
 }) {
   const t = translations[language];
   const circle = circleCopy[language];
@@ -238,7 +238,14 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
         {onVerified ? <button className={button} onClick={onVerified}>{circle.share}</button> : <>
           <div className="member-counts"><span><strong>{photos?.length ?? "—"}</strong>{t.submitted}</span><span><strong>{photos?.filter(p => p.status === "approved").length ?? "—"}</strong>{t.approved}</span></div>
           <button className="capture-skip" aria-expanded={showPhotos} onClick={() => setShowPhotos(!showPhotos)}>{t.photos}</button>
-          {showPhotos && (photos?.length ? <ul className="member-photos">{photos.map(photo => <li key={photo.id}><img loading="lazy" src={"/api/members/photos/" + photo.id} alt=""/><span>{photo.description}<small>{t.states[photo.status]}</small></span></li>)}</ul> : photos && <p>{t.empty}</p>)}
+          {showPhotos && (photos?.length ? <ul className="member-photos">{photos.map(photo => (
+            <li key={photo.id}>
+              <button type="button" className="member-photo-tile" data-status={photo.status} aria-label={`${photo.description} · ${t.states[photo.status]}`} onClick={() => onOpenPhoto?.(photo, t.states[photo.status])}>
+                <img loading="lazy" decoding="async" src={"/api/members/photos/" + photo.id} alt=""/>
+                {photo.status !== "approved" && <span>{t.states[photo.status]}</span>}
+              </button>
+            </li>
+          ))}</ul> : photos && <p>{t.empty}</p>)}
           <p><strong>{circle.title}</strong><br/>{t.membership}</p>
           <button className="capture-skip" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>{t.settings}</button>
           {settingsOpen && <div className="member-actions">
