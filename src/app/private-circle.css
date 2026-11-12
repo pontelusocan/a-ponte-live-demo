@@ -101,4 +101,5 @@
 .member-strength meter::-webkit-meter-bar { background: #333; border: 0; }
 .member-strength meter::-webkit-meter-optimum-value { background: var(--strength-color); }
 .member-strength meter::-moz-meter-bar { background: var(--strength-color); }
-.capture-form .member-fields .member-age { flex-direction: row; align-items: center; min-height: 44px; }
+.capture-form .member-fields .member-age { display: flex; flex-direction: row; align-items: center; min-height: 44px; }
+.member-age input { flex: none; margin: 0; }

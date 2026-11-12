@@ -286,9 +286,9 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
             {repeated && password !== repeated && <small className="capture-error">{t.mismatch}</small>}
           </>}
           {mode === "register" && <>
-            <label className="member-age"><input type="checkbox" name="adult" required/>{t.adult}</label>
             <label>{t.relationship}<select name="relationship" defaultValue="customer">{roles.map((role, i) => <option key={role} value={role}>{t.roles[i]}</option>)}</select></label>
             <label>{t.company}<input name="company" autoComplete="organization" maxLength={100}/></label>
+            <label className="member-age"><input type="checkbox" name="adult" required/><span>{t.adult}</span></label>
           </>}
           <button className={button} disabled={busy}>{mode === "verify" ? t.verifyAction : t[mode]}</button>
         </form>
