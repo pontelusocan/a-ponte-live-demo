@@ -97,7 +97,17 @@ test('member verifies, uploads privately, sees the Admin decision and can recove
   const links = [];
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     assert.equal(url, 'https://api.resend.com/emails');
-    links.push(new URL(JSON.parse(options.body).text.split('\n\n')[1]));
+    const email = JSON.parse(options.body);
+    const link = email.text.split('\n\n').find(part => part.startsWith('https://'));
+    links.push(new URL(link));
+    if (links.at(-1).hash.startsWith('#verify=')) {
+      assert.match(email.subject, /^Bem-vindo à A PONTE Live/);
+      assert.ok(email.html.includes('color:#0056b3'));
+      assert.match(email.html, /<em>.*24 horas.*<\/em>/);
+      assert.ok(email.html.includes(link.replaceAll('&', '&amp;')));
+    } else {
+      assert.equal(email.html, undefined);
+    }
     return Response.json({id: 'test-mail'});
   });
 

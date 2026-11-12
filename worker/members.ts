@@ -1,3 +1,4 @@
+import { resetSubjects, verificationEmail } from "./member-email.ts";
 import { ApiError, boundedBody } from "./image.ts";
 import { sha256, type Env } from "./index.ts";
 
@@ -68,16 +69,14 @@ async function sendLink(env: Env, member: Member, purpose: "verify" | "reset", o
   await env.DB.prepare("INSERT INTO member_links VALUES(?,?,?,?)").bind(hash, member.id, purpose, Date.now() + ttl).run();
   const url = new URL(draft && purpose === "verify" ? "/live/share/" : "/live/account/", origin);
   url.hash = new URLSearchParams({[purpose]: token, ...(draft && purpose === "verify" ? {draft} : {})}).toString();
-  const messages = {
-    EN: ["Verify your A PONTE Live email", "Reset your A PONTE Live password"],
-    FR: ["Vérifiez votre adresse e-mail A PONTE Live", "Réinitialisez votre mot de passe A PONTE Live"],
-    PT: ["Confirme o seu email A PONTE Live", "Redefina a sua palavra-passe A PONTE Live"],
+  const email = purpose === "verify" ? verificationEmail(member.language, url) : {
+    subject: (resetSubjects[member.language as keyof typeof resetSubjects] ?? resetSubjects.EN),
+    text: (resetSubjects[member.language as keyof typeof resetSubjects] ?? resetSubjects.EN) + "\n\n" + url,
   };
-  const subject = (messages[member.language as keyof typeof messages] ?? messages.EN)[purpose === "verify" ? 0 : 1];
   try {
     const result = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: {Authorization: "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json"},
-      body: JSON.stringify({from: env.MEMBER_EMAIL_FROM, to: [member.email], subject, text: subject + "\n\n" + url}),
+      body: JSON.stringify({from: env.MEMBER_EMAIL_FROM, to: [member.email], ...email}),
       signal: AbortSignal.timeout(10000),
     });
     if (!result.ok) throw new Error("email delivery");
