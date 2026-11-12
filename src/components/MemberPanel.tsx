@@ -228,9 +228,13 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
     {loading ? <p role="status">{t.loading}</p> : !enabled ? <><h1>{circle.account}</h1><p>{t.unavailable}</p></> :
       profile && member ? <>
         <h1>{circle.account}</h1>
-        <div className="member-avatar">{member.avatar ? <img src={member.avatar} alt=""/> : <Icon name="person" size={35}/>}</div>
-        <h2>{member.displayName || member.username}</h2>
-        {member.displayName && <p>@{member.username}</p>}
+        <div className="member-identity">
+          <div className="member-avatar">{member.avatar ? <img src={member.avatar} alt=""/> : <Icon name="person" size={35}/>}</div>
+          <div className="member-identity-copy">
+            <h2>{member.displayName || member.username}</h2>
+            <p>{t.roles[roles.indexOf(member.relationship)] ?? t.roles[3]}</p>
+          </div>
+        </div>
         {onVerified ? <button className={button} onClick={onVerified}>{circle.share}</button> : <>
           <div className="member-counts"><span><strong>{photos?.length ?? "—"}</strong>{t.submitted}</span><span><strong>{photos?.filter(p => p.status === "approved").length ?? "—"}</strong>{t.approved}</span></div>
           <button className="capture-skip" aria-expanded={showPhotos} onClick={() => setShowPhotos(!showPhotos)}>{t.photos}</button>
