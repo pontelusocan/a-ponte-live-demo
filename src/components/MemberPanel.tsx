@@ -279,7 +279,7 @@ export default function MemberPanel({language, enabled, draft, onVerified}: {
           {choosingPassword && <>
             <small>{t.passwordHelp}</small>
             {password && <div className="member-strength">
-              <meter aria-label={t.strengthLabel} min={0} max={3} value={score + 1}/>
+              <meter className={`member-strength-${score}`} aria-label={t.strengthLabel} min={0} max={3} value={score + 1}/>
               <small>{t.strengthLabel} · {t.strength[score]}</small>
             </div>}
             <PasswordField label={t.repeat} name="passwordConfirmation" t={t} isNew onChange={setRepeated}/>

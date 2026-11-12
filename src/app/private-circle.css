@@ -94,5 +94,11 @@
   display: grid; place-items: center; color: inherit; background: transparent; border: 0;
 }
 .member-strength { display: grid; gap: .3rem; }
-.member-strength meter { width: 100%; }
-.member-fields .member-age { flex-direction: row; align-items: center; min-height: 44px; }
+.member-strength meter { width: 100%; appearance: none; }
+.member-strength-0 { --strength-color: #f87171; }
+.member-strength-1 { --strength-color: #facc15; }
+.member-strength-2 { --strength-color: #4ade80; }
+.member-strength meter::-webkit-meter-bar { background: #333; border: 0; }
+.member-strength meter::-webkit-meter-optimum-value { background: var(--strength-color); }
+.member-strength meter::-moz-meter-bar { background: var(--strength-color); }
+.capture-form .member-fields .member-age { flex-direction: row; align-items: center; min-height: 44px; }
