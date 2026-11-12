@@ -283,7 +283,13 @@ export default function MemberPanel({language, enabled, draft, onVerified, onOpe
         <h1>{mode === "verify" ? t.verify : t[mode]}</h1>
         <form key={mode} className="member-fields" onSubmit={auth}>
           {mode === "register" && <label>{t.username}<input name="username" autoComplete="username" minLength={3} maxLength={40} required/></label>}
-          {((mode !== "verify" && mode !== "reset") || verificationNeedsLogin) && <label>{t.email}<input name="email" type="email" autoComplete="email" maxLength={254} required/></label>}
+          {((mode !== "verify" && mode !== "reset") || verificationNeedsLogin) && <div className={mode === "login" ? "member-login-email" : undefined}>
+            {mode === "login" && <div className="member-login-backdrop" aria-hidden="true">
+              <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/brand/login-waiter.webp`} alt="" decoding="async"/>
+              <span className="hero-dark"/>
+            </div>}
+            <label>{t.email}<input name="email" type="email" autoComplete="email" maxLength={254} required/></label>
+          </div>}
           {((mode !== "verify" && mode !== "forgot") || verificationNeedsLogin) && <PasswordField label={t.password} name="password" t={t} isNew={choosingPassword} onChange={choosingPassword ? setPassword : undefined}/>}
           {choosingPassword && <>
             <small>{t.passwordHelp}</small>
