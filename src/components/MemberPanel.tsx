@@ -21,7 +21,7 @@ const translations = {
     changed: "Password updated. Sign in to continue.", verified: "Email verified. Sign in if prompted.",
     verifyAction: "Confirm email address", save: "Save profile", edit: "Edit profile", displayName: "Display name (optional)",
     avatar: "Profile photo (optional)", remove: "Remove profile photo", submitted: "Photos submitted", approved: "Photos approved",
-    photos: "See my photos", empty: "You haven’t submitted any photos yet.", loading: "Loading…", privacy: "Privacy notice",
+    loading: "Loading…", privacy: "Privacy notice",
     states: {pending: "Pending", approved: "Approved", declined: "Declined"},
     unavailable: "Accounts are available in the connected staging app.", membership: "Membership levels are being developed.",
     errors: {verify_sign_in: "Sign in with the account this verification link was sent to.", invalid_login: "Check your email and password.", invalid_fields: "Check the information you entered.", account_exists: "This email or username is already in use.", invalid_link: "This link has expired or already been used.", mail_unavailable: "Email delivery is temporarily unavailable. Try again later.", rate_limited: "Too many attempts. Wait a minute and try again.", default: "Something went wrong. Please try again."},
@@ -40,7 +40,7 @@ const translations = {
     changed: "Mot de passe modifié. Connectez-vous pour continuer.", verified: "Adresse vérifiée. Connectez-vous si nécessaire.",
     verifyAction: "Confirmer l’adresse e-mail", save: "Enregistrer le profil", edit: "Modifier le profil", displayName: "Nom affiché (facultatif)",
     avatar: "Photo de profil (facultative)", remove: "Supprimer la photo de profil", submitted: "Photos envoyées", approved: "Photos approuvées",
-    photos: "Voir mes photos", empty: "Vous n’avez pas encore envoyé de photo.", loading: "Chargement…", privacy: "Confidentialité",
+    loading: "Chargement…", privacy: "Confidentialité",
     states: {pending: "En attente", approved: "Approuvée", declined: "Refusée"},
     unavailable: "Les comptes sont disponibles dans l’application de test connectée.", membership: "Les niveaux sont en cours de définition.",
     errors: {verify_sign_in: "Connectez-vous au compte associé à ce lien de vérification.", invalid_login: "Vérifiez votre e-mail et votre mot de passe.", invalid_fields: "Vérifiez les informations saisies.", account_exists: "Cette adresse ou ce nom d’utilisateur est déjà utilisé.", invalid_link: "Ce lien a expiré ou a déjà été utilisé.", mail_unavailable: "L’envoi d’e-mails est temporairement indisponible.", rate_limited: "Trop de tentatives. Réessayez dans une minute.", default: "Une erreur est survenue. Veuillez réessayer."},
@@ -59,7 +59,7 @@ const translations = {
     changed: "Palavra-passe alterada. Inicie sessão para continuar.", verified: "Email confirmado. Inicie sessão se necessário.",
     verifyAction: "Confirmar endereço de email", save: "Guardar perfil", edit: "Editar perfil", displayName: "Nome visível (opcional)",
     avatar: "Fotografia de perfil (opcional)", remove: "Remover fotografia de perfil", submitted: "Fotografias enviadas", approved: "Fotografias aprovadas",
-    photos: "Ver as minhas fotografias", empty: "Ainda não enviou fotografias.", loading: "A carregar…", privacy: "Privacidade",
+    loading: "A carregar…", privacy: "Privacidade",
     states: {pending: "Pendente", approved: "Aprovada", declined: "Recusada"},
     unavailable: "As contas estão disponíveis na aplicação de testes ligada ao serviço.", membership: "Os níveis ainda estão a ser definidos.",
     errors: {verify_sign_in: "Inicie sessão na conta associada a esta ligação de confirmação.", invalid_login: "Verifique o email e a palavra-passe.", invalid_fields: "Verifique os dados introduzidos.", account_exists: "Este email ou nome de utilizador já está em uso.", invalid_link: "Esta ligação expirou ou já foi utilizada.", mail_unavailable: "O envio de emails está temporariamente indisponível.", rate_limited: "Demasiadas tentativas. Tente novamente dentro de um minuto.", default: "Ocorreu um erro. Tente novamente."},
@@ -121,7 +121,6 @@ export default function MemberPanel({language, enabled, draft, onVerified, onOpe
   const [editing, setEditing] = useState(false);
   const [avatar, setAvatar] = useState("");
   const [photos, setPhotos] = useState<MemberPhoto[] | null>(null);
-  const [showPhotos, setShowPhotos] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -237,15 +236,14 @@ export default function MemberPanel({language, enabled, draft, onVerified, onOpe
         </div>
         {onVerified ? <button className={button} onClick={onVerified}>{circle.share}</button> : <>
           <div className="member-counts"><span><strong>{photos?.length ?? "—"}</strong>{t.submitted}</span><span><strong>{photos?.filter(p => p.status === "approved").length ?? "—"}</strong>{t.approved}</span></div>
-          <button className="capture-skip" aria-expanded={showPhotos} onClick={() => setShowPhotos(!showPhotos)}>{t.photos}</button>
-          {showPhotos && (photos?.length ? <ul className="member-photos">{photos.map(photo => (
+          {photos && photos.length > 0 && <ul className="member-photos">{photos.map(photo => (
             <li key={photo.id}>
               <button type="button" className="member-photo-tile" data-status={photo.status} aria-label={`${photo.description} · ${t.states[photo.status]}`} onClick={() => onOpenPhoto?.(photo, t.states[photo.status])}>
                 <img loading="lazy" decoding="async" src={"/api/members/photos/" + photo.id} alt=""/>
                 {photo.status !== "approved" && <span>{t.states[photo.status]}</span>}
               </button>
             </li>
-          ))}</ul> : photos && <p>{t.empty}</p>)}
+          ))}</ul>}
           <p><strong>{circle.title}</strong><br/>{t.membership}</p>
           <button className="capture-skip" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>{t.settings}</button>
           {settingsOpen && <div className="member-actions">
